@@ -11,6 +11,7 @@ bin_PROGRAMS =  \
 
 system_ntkd_SOURCES =  \
 	system_ntkd.vala \
+	rngen.vala \
 	commander.vala \
 	fake_command_dispatcher.vala \
 	serializables.vala \
@@ -19,6 +20,7 @@ system_ntkd_SOURCES =  \
 	rpc/stub_factory.vala \
 	rpc/module_stubs.vala \
 	neighborhood_helpers.vala \
+	neighborhood_signals.vala \
 	neighborhood/neighborhood.vapi \
 	$(NULL)
 

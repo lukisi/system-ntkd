@@ -1,4 +1,5 @@
 system_ntkd.c
+rngen.c
 commander.c
 fake_command_dispatcher.c
 rpc/module_skeletons.c
@@ -6,6 +7,7 @@ rpc/module_stubs.c
 rpc/skeleton_factory.c
 rpc/stub_factory.c
 neighborhood_helpers.c
+neighborhood_signals.c
 serializables.c
 system_ntkd_vala.stamp*
 Makefile.in
