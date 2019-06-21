@@ -1,3 +1,7 @@
+commander.c
+fake_command_dispatcher.c
+system_ntkd.c
+system_ntkd_vala.stamp*
 Makefile.in
 aclocal.m4
 autom4te.cache
@@ -11,4 +15,3 @@ install-sh
 ltmain.sh
 missing
 test-driver
-
