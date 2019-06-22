@@ -1,31 +1,66 @@
+/*
+ *  This file is part of Netsukuku.
+ *  Copyright (C) 2019 Luca Dionisi aka lukisi <luca.dionisi@gmail.com>
+ *
+ *  Netsukuku is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  Netsukuku is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Netsukuku.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 using Gee;
 using TaskletSystem;
 using Netsukuku.Neighborhood;
+using Netsukuku.Identities;
 
 namespace Netsukuku
 {
+    string json_string_object(Object obj)
+    {
+        Json.Node n = Json.gobject_serialize(obj);
+        Json.Generator g = new Json.Generator();
+        g.root = n;
+        string ret = g.to_data(null);
+        return ret;
+    }
 
+    string topology;
+    string firstaddr;
+    int pid;
     [CCode (array_length = false, array_null_terminated = true)]
     string[] interfaces;
-    int pid;
+    [CCode (array_length = false, array_null_terminated = true)]
+    string[] _tasks;
 
     ITasklet tasklet;
     Commander cm;
     FakeCommandDispatcher fake_cm;
     NeighborhoodManager? neighborhood_mgr;
+    IdentityManager? identity_mgr;
     SkeletonFactory skeleton_factory;
     StubFactory stub_factory;
-
     HashMap<string,PseudoNetworkInterface> pseudonic_map;
+    ArrayList<NodeID> my_nodeid_list;
+    ArrayList<IdmgmtArc> arcs;
+    ArrayList<string> tester_events;
 
     int main(string[] _args)
     {
         pid = 0; // default
         OptionContext oc = new OptionContext("<options>");
-        OptionEntry[] entries = new OptionEntry[3];
+        OptionEntry[] entries = new OptionEntry[4];
         int index = 0;
         entries[index++] = {"pid", 'p', 0, OptionArg.INT, ref pid, "Fake PID (e.g. -p 1234).", null};
         entries[index++] = {"interfaces", 'i', 0, OptionArg.STRING_ARRAY, ref interfaces, "Interface (e.g. -i eth1). You can use it multiple times.", null};
+        entries[index++] = {"tasks", 't', 0, OptionArg.STRING_ARRAY, ref _tasks, "Tasks (e.g. -t dothis,2,blabla). You can use it multiple times.", null};
         entries[index++] = { null };
         oc.add_main_entries(entries, null);
         try {
@@ -38,10 +73,14 @@ namespace Netsukuku
 
         ArrayList<string> args = new ArrayList<string>.wrap(_args);
 
+        tester_events = new ArrayList<string>();
         ArrayList<string> devs;
         // Names of the network interfaces to monitor.
         devs = new ArrayList<string>();
         foreach (string dev in interfaces) devs.add(dev);
+
+        ArrayList<string> tasks = new ArrayList<string>();
+        foreach (string task in _tasks) tasks.add(task);
 
         if (pid == 0) error("Bad usage");
         if (devs.is_empty) error("Bad usage");
@@ -53,6 +92,7 @@ namespace Netsukuku
 
         // Initialize modules that have remotable methods (serializable classes need to be registered).
         NeighborhoodManager.init(tasklet);
+        IdentityManager.init(tasklet);
         typeof(WholeNodeSourceID).class_peek();
         typeof(WholeNodeUnicastID).class_peek();
         typeof(EveryWholeNodeBroadcastID).class_peek();
@@ -63,6 +103,7 @@ namespace Netsukuku
         uint32 seed_prn = (uint32)_seed.hash();
         PRNGen.init_rngen(null, seed_prn);
         NeighborhoodManager.init_rngen(null, seed_prn);
+        IdentityManager.init_rngen(null, seed_prn);
 
         // Pass tasklet system to the RPC library (ntkdrpc)
         init_tasklet_system(tasklet);
@@ -135,9 +176,10 @@ namespace Netsukuku
             if (do_me_exit) break;
         }
 
-        // Call stop_monitor of NeighborhoodManager.
-        foreach (string dev in devs) stop_monitor(dev);
-        devs.clear();
+        // Call stop_rpc.
+        ArrayList<string> final_devs = new ArrayList<string>();
+        final_devs.add_all(pseudonic_map.keys);
+        foreach (string dev in final_devs) stop_rpc(dev);
 
         // Then we destroy the object NeighborhoodManager.
         neighborhood_mgr = null;
@@ -155,7 +197,7 @@ namespace Netsukuku
         do_me_exit = true;
     }
 
-    void stop_monitor(string dev)
+    void stop_rpc(string dev)
     {
         PseudoNetworkInterface pseudonic = pseudonic_map[dev];
         skeleton_factory.stop_stream_system_listen(pseudonic.st_listen_pathname);
@@ -163,6 +205,7 @@ namespace Netsukuku
         neighborhood_mgr.stop_monitor(dev);
         skeleton_factory.stop_datagram_system_listen(pseudonic.listen_pathname);
         print(@"stopped datagram_system_listen $(pseudonic.listen_pathname).\n");
+        pseudonic_map.unset(dev);
     }
 
     class PseudoNetworkInterface : Object
@@ -182,5 +225,20 @@ namespace Netsukuku
         public string linklocal {get; set;}
         public string st_listen_pathname {get; set;}
         public INeighborhoodNetworkInterface nic {get; set;}
+    }
+
+    string fake_random_mac(int pid, string dev)
+    {
+        string _seed = @"$(pid)_$(dev)";
+        uint32 seed_prn = (uint32)_seed.hash();
+        Rand _rand = new Rand.with_seed(seed_prn);
+        return @"fe:aa:aa:$(_rand.int_range(10, 99)):$(_rand.int_range(10, 99)):$(_rand.int_range(10, 99))";
+    }
+
+    string fake_random_linklocal(string mac)
+    {
+        uint32 seed_prn = (uint32)mac.hash();
+        Rand _rand = new Rand.with_seed(seed_prn);
+        return @"169.254.$(_rand.int_range(0, 255)).$(_rand.int_range(0, 255))";
     }
 }

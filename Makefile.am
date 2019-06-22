@@ -3,6 +3,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = \
 	neighborhood \
+	identities \
 	$(NULL)
 
 bin_PROGRAMS =  \
@@ -21,7 +22,10 @@ system_ntkd_SOURCES =  \
 	rpc/module_stubs.vala \
 	neighborhood_helpers.vala \
 	neighborhood_signals.vala \
+	identities_helpers.vala \
+	identities_signals.vala \
 	neighborhood/neighborhood.vapi \
+	identities/identities.vapi \
 	$(NULL)
 
 system_ntkd_VALAFLAGS = \
@@ -50,6 +54,7 @@ system_ntkd_CPPFLAGS = \
 	$(NTKDRPC_CFLAGS) \
 	$(PEERS_CFLAGS) \
 	-I$(srcdir)/neighborhood \
+	-I$(srcdir)/identities \
 	$(NULL)
 
 system_ntkd_LDADD = \
@@ -62,5 +67,6 @@ system_ntkd_LDADD = \
 	$(NTKDRPC_LIBS) \
 	$(PEERS_LIBS) \
 	$(builddir)/neighborhood/libneighborhood.la \
+	$(builddir)/identities/libidentities.la \
 	$(NULL)
 
