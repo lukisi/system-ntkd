@@ -36,5 +36,6 @@ PKG_CHECK_VAR([PEERS_VAPIDIR], [peers], [vapidir])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_SUBDIRS([neighborhood])
+AC_CONFIG_LINKS([test_1_neighborhood:testsuites/scripts/test_1_neighborhood])
 AC_OUTPUT
 
