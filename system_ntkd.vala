@@ -140,13 +140,18 @@ namespace Netsukuku
         neighborhood_mgr.nic_address_unset.connect(neighborhood_nic_address_unset);
 
         pseudonic_map = new HashMap<string,PseudoNetworkInterface>();
+        Gee.List<string> if_list_dev = new ArrayList<string>();
+        Gee.List<string> if_list_mac = new ArrayList<string>();
+        Gee.List<string> if_list_linklocal = new ArrayList<string>();
         foreach (string dev in devs)
         {
             assert(!(dev in pseudonic_map.keys));
             string listen_pathname = @"recv_$(pid)_$(dev)";
             string send_pathname = @"send_$(pid)_$(dev)";
             string mac = @"fe:aa:aa:$(PRNGen.int_range(10, 99)):$(PRNGen.int_range(10, 99)):$(PRNGen.int_range(10, 99))";
-            pseudonic_map[dev] = new PseudoNetworkInterface(dev, listen_pathname, send_pathname, mac);
+            print(@"INFO: mac for $(pid),$(dev) is $(mac).\n");
+            PseudoNetworkInterface pseudonic = new PseudoNetworkInterface(dev, listen_pathname, send_pathname, mac);
+            pseudonic_map[dev] = pseudonic;
 
             // Set up NIC
             bid = fake_cm.begin_block();
@@ -165,7 +170,38 @@ namespace Netsukuku
             print(@"started datagram_system_listen $(listen_pathname) $(send_pathname) $(mac).\n");
             // Run monitor. This will also set the IP link-local address and the field will be compiled.
             neighborhood_mgr.start_monitor(pseudonic_map[dev].nic);
+
+            // Start listen stream on linklocal
+            string linklocal = fake_random_linklocal(mac);
+            // @"169.254.$(PRNGen.int_range(0, 255)).$(PRNGen.int_range(0, 255))";
+            print(@"INFO: linklocal for $(mac) is $(linklocal).\n");
+            pseudonic.linklocal = linklocal;
+            pseudonic.st_listen_pathname = @"conn_$(linklocal)";
+            skeleton_factory.start_stream_system_listen(pseudonic.st_listen_pathname);
+            tasklet.ms_wait(1);
+            print(@"started stream_system_listen $(pseudonic.st_listen_pathname).\n");
+
+            if_list_dev.add(dev);
+            if_list_mac.add(mac);
+            if_list_linklocal.add(linklocal);
         }
+
+        arcs = new ArrayList<IdmgmtArc>();
+        my_nodeid_list = new ArrayList<NodeID>();
+
+        // Init module Identities
+        identity_mgr = new IdentityManager(
+            if_list_dev, if_list_mac, if_list_linklocal,
+            new IdmgmtNetnsManager(),
+            new IdmgmtStubFactory(),
+            () => @"169.254.$(PRNGen.int_range(0, 255)).$(PRNGen.int_range(0, 255))");
+        my_nodeid_list.add(identity_mgr.get_main_id());
+        // connect signals
+        identity_mgr.identity_arc_added.connect(identities_identity_arc_added);
+        identity_mgr.identity_arc_changed.connect(identities_identity_arc_changed);
+        identity_mgr.identity_arc_removing.connect(identities_identity_arc_removing);
+        identity_mgr.identity_arc_removed.connect(identities_identity_arc_removed);
+        identity_mgr.arc_removed.connect(identities_arc_removed);
 
         // register handlers for SIGINT and SIGTERM to exit
         Posix.@signal(Posix.Signal.INT, safe_exit);

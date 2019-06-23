@@ -1,0 +1,47 @@
+#!/bin/bash
+
+radio_domain -i 1223_wl0 -o 2321_wl0 &
+RADIO_1223_PID=$!
+radio_domain -i 2321_wl0 -o 1223_wl0 &
+RADIO_2321_PID=$!
+sleep 0.3
+
+echo Starting launches at `date +%T.%N`
+
+./system_ntkd -i wl0 -p 1223 > test_1_n_identities_1223_out.txt 2>&1 &
+PEER_1223_PID=$!
+sleep 0.3
+./system_ntkd -i wl0 -p 2321 > test_1_n_identities_2321_out.txt 2>&1 &
+PEER_2321_PID=$!
+sleep 0.3
+
+echo Done launches at `date +%T.%N`
+
+sleep 2
+
+echo checking status...
+PEER_ABORT=0
+kill -0 $PEER_1223_PID || { wait $PEER_1223_PID; echo system_peer 1223 prematurely exited with $?; PEER_ABORT=1; }
+kill -0 $PEER_2321_PID || { wait $PEER_2321_PID; echo system_peer 2321 prematurely exited with $?; PEER_ABORT=1; }
+
+echo killing...
+# interrupt peers
+kill $PEER_1223_PID $PEER_2321_PID
+
+wait $PEER_1223_PID $PEER_2321_PID
+
+# Ignore errors in this shutdown. Remove any remaining local socket.
+rm -f conn_169.254.*
+rm -f conn_????_?
+rm -f recv_????_wl0
+
+# kill proxy demons
+kill $RADIO_1223_PID $RADIO_2321_PID
+
+wait $RADIO_1223_PID $RADIO_2321_PID
+
+# delay for removal of local sockets (e.g. send_2232_wl0)
+sleep 0.3
+
+# check PEER_ABORT
+test $PEER_ABORT -eq 0 || exit 1
