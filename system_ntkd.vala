@@ -45,6 +45,7 @@ namespace Netsukuku
     FakeCommandDispatcher fake_cm;
     NeighborhoodManager? neighborhood_mgr;
     IdentityManager? identity_mgr;
+    ArrayList<NodeArc> arc_list;
     SkeletonFactory skeleton_factory;
     StubFactory stub_factory;
     HashMap<string,PseudoNetworkInterface> pseudonic_map;
@@ -225,6 +226,17 @@ namespace Netsukuku
         public string linklocal {get; set;}
         public string st_listen_pathname {get; set;}
         public INeighborhoodNetworkInterface nic {get; set;}
+    }
+
+    class NodeArc : Object
+    {
+        public NodeArc(INeighborhoodArc neighborhood_arc, IdmgmtArc i_arc)
+        {
+            this.neighborhood_arc = neighborhood_arc;
+            this.i_arc = i_arc;
+        }
+        public INeighborhoodArc neighborhood_arc;
+        public IdmgmtArc i_arc; // for module Identities
     }
 
     string fake_random_mac(int pid, string dev)
