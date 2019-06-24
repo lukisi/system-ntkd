@@ -69,8 +69,11 @@ namespace Netsukuku
     void identities_arc_removed(IIdmgmtArc arc)
     {
         tester_events.add(@"Identities:Signal:arc_removed");
-        // The module Identities has removed an arc. The user (ntkd) should actually remove the arc (from Neighborhood).
+        // The module Identities has removed an arc. Remove the arc from Neighborhood.
         print(@"Identities: Signal arc_removed: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
-        arcs.remove((IdmgmtArc)arc);
+        IdmgmtArc _arc = (IdmgmtArc)arc;
+        NodeArc node_arc = arc_map[_arc.id];
+        neighborhood_mgr.remove_my_arc(node_arc.neighborhood_arc);
+        arc_map.unset(_arc.id);
     }
 }

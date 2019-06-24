@@ -45,12 +45,12 @@ namespace Netsukuku
     FakeCommandDispatcher fake_cm;
     NeighborhoodManager? neighborhood_mgr;
     IdentityManager? identity_mgr;
-    ArrayList<NodeArc> arc_list;
+    HashMap<string,HandledNic> handlednic_map;
+    HashMap<int,NodeArc> arc_map;
     SkeletonFactory skeleton_factory;
     StubFactory stub_factory;
     HashMap<string,PseudoNetworkInterface> pseudonic_map;
     ArrayList<NodeID> my_nodeid_list;
-    ArrayList<IdmgmtArc> arcs;
     ArrayList<string> tester_events;
 
     int main(string[] _args)
@@ -139,6 +139,7 @@ namespace Netsukuku
         neighborhood_mgr.arc_removed.connect(neighborhood_arc_removed);
         neighborhood_mgr.nic_address_unset.connect(neighborhood_nic_address_unset);
 
+        handlednic_map = new HashMap<string,HandledNic>();
         pseudonic_map = new HashMap<string,PseudoNetworkInterface>();
         Gee.List<string> if_list_dev = new ArrayList<string>();
         Gee.List<string> if_list_mac = new ArrayList<string>();
@@ -168,25 +169,18 @@ namespace Netsukuku
             // Start listen datagram on dev
             skeleton_factory.start_datagram_system_listen(listen_pathname, send_pathname, new NeighbourSrcNic(mac));
             print(@"started datagram_system_listen $(listen_pathname) $(send_pathname) $(mac).\n");
-            // Run monitor. This will also set the IP link-local address and the field will be compiled.
+            // Run monitor. This will also set the IP link-local address,
+            //  the stream_listener will start and the 'linklocal' field will be compiled.
             neighborhood_mgr.start_monitor(pseudonic_map[dev].nic);
-
-            // Start listen stream on linklocal
-            string linklocal = fake_random_linklocal(mac);
-            // @"169.254.$(PRNGen.int_range(0, 255)).$(PRNGen.int_range(0, 255))";
-            print(@"INFO: linklocal for $(mac) is $(linklocal).\n");
-            pseudonic.linklocal = linklocal;
-            pseudonic.st_listen_pathname = @"conn_$(linklocal)";
-            skeleton_factory.start_stream_system_listen(pseudonic.st_listen_pathname);
-            tasklet.ms_wait(1);
-            print(@"started stream_system_listen $(pseudonic.st_listen_pathname).\n");
+            tasklet.ms_wait(5);
+            print(@"INFO: linklocal for $(mac) is $(handlednic_map[dev].linklocal).\n");
 
             if_list_dev.add(dev);
             if_list_mac.add(mac);
-            if_list_linklocal.add(linklocal);
+            if_list_linklocal.add(handlednic_map[dev].linklocal);
         }
 
-        arcs = new ArrayList<IdmgmtArc>();
+        arc_map = new HashMap<int,NodeArc>();
         my_nodeid_list = new ArrayList<NodeID>();
 
         // Init module Identities
@@ -236,6 +230,7 @@ namespace Netsukuku
 
     void stop_rpc(string dev)
     {
+        string linklocal = handlednic_map[dev].linklocal;
         PseudoNetworkInterface pseudonic = pseudonic_map[dev];
         skeleton_factory.stop_stream_system_listen(pseudonic.st_listen_pathname);
         print(@"stopped stream_system_listen $(pseudonic.st_listen_pathname).\n");
@@ -264,6 +259,22 @@ namespace Netsukuku
         public INeighborhoodNetworkInterface nic {get; set;}
     }
 
+    class HandledNic : Object
+    {
+        public HandledNic(string dev, string mac, string linklocal, INeighborhoodNetworkInterface nic)
+        {
+            this.dev = dev;
+            this.mac = mac;
+            this.linklocal = linklocal;
+            this.nic = nic;
+        }
+
+        public string dev {get; private set;}
+        public string mac {get; private set;}
+        public string linklocal {get; private set;}
+        public INeighborhoodNetworkInterface nic {get; private set;}
+    }
+
     class NodeArc : Object
     {
         public NodeArc(INeighborhoodArc neighborhood_arc, IdmgmtArc i_arc)
@@ -273,20 +284,5 @@ namespace Netsukuku
         }
         public INeighborhoodArc neighborhood_arc;
         public IdmgmtArc i_arc; // for module Identities
-    }
-
-    string fake_random_mac(int pid, string dev)
-    {
-        string _seed = @"$(pid)_$(dev)";
-        uint32 seed_prn = (uint32)_seed.hash();
-        Rand _rand = new Rand.with_seed(seed_prn);
-        return @"fe:aa:aa:$(_rand.int_range(10, 99)):$(_rand.int_range(10, 99)):$(_rand.int_range(10, 99))";
-    }
-
-    string fake_random_linklocal(string mac)
-    {
-        uint32 seed_prn = (uint32)mac.hash();
-        Rand _rand = new Rand.with_seed(seed_prn);
-        return @"169.254.$(_rand.int_range(0, 255)).$(_rand.int_range(0, 255))";
     }
 }
