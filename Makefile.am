@@ -4,6 +4,7 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = \
 	neighborhood \
 	identities \
+	qspn \
 	$(NULL)
 
 bin_PROGRAMS =  \
@@ -55,6 +56,7 @@ system_ntkd_CPPFLAGS = \
 	$(PEERS_CFLAGS) \
 	-I$(srcdir)/neighborhood \
 	-I$(srcdir)/identities \
+	-I$(srcdir)/qspn \
 	$(NULL)
 
 system_ntkd_LDADD = \
@@ -68,5 +70,6 @@ system_ntkd_LDADD = \
 	$(PEERS_LIBS) \
 	$(builddir)/neighborhood/libneighborhood.la \
 	$(builddir)/identities/libidentities.la \
+	$(builddir)/qspn/libqspn.la \
 	$(NULL)
 

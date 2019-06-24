@@ -37,6 +37,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_SUBDIRS([neighborhood])
 AC_CONFIG_SUBDIRS([identities])
+AC_CONFIG_SUBDIRS([qspn])
 AC_CONFIG_LINKS([test_1_neighborhood:testsuites/scripts/test_1_neighborhood])
 AC_CONFIG_LINKS([test_1_n_identities:testsuites/scripts/test_1_n_identities])
 AC_OUTPUT
