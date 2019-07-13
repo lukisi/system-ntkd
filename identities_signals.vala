@@ -36,6 +36,15 @@ namespace Netsukuku
             print(@"    prev_id_arc: null\n");
         else
             print(@"    prev_id_arc: nodeid $(prev_id_arc.get_peer_nodeid().id) peer_mac $(prev_id_arc.get_peer_mac()) peer_linklocal $(prev_id_arc.get_peer_linklocal())\n");
+
+        // Retrieve my identity.
+        IdentityData identity_data = find_local_identity(id);
+        // Create IdentityArc.
+        IdentityArc ia = new IdentityArc(identity_data.local_identity_index, arc, id_arc);
+        // Add to the list.
+        identity_data.identity_arcs.add(ia);
+
+        // TODO
     }
 
     void identities_identity_arc_changed(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc, bool only_neighbour_migrated)
@@ -46,6 +55,13 @@ namespace Netsukuku
         print(@"    my identity: nodeid $(id.id)\n");
         print(@"    id_arc: nodeid $(id_arc.get_peer_nodeid().id) peer_mac $(id_arc.get_peer_mac()) peer_linklocal $(id_arc.get_peer_linklocal())\n");
         print(@"    only_neighbour_migrated: $(only_neighbour_migrated)\n");
+
+        // Retrieve my identity.
+        IdentityData identity_data = find_local_identity(id);
+        // Retrieve IdentityArc.
+        IdentityArc ia = identity_data.identity_arcs_find(id_arc);
+
+        // TODO
     }
 
     void identities_identity_arc_removing(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
@@ -55,6 +71,8 @@ namespace Netsukuku
         print(@"    arc: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
         print(@"    my identity: nodeid $(id.id)\n");
         print(@"    peer_nodeid: nodeid $(peer_nodeid.id)\n");
+
+        // TODO
     }
 
     void identities_identity_arc_removed(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
@@ -64,6 +82,8 @@ namespace Netsukuku
         print(@"    arc: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
         print(@"    my identity: nodeid $(id.id)\n");
         print(@"    peer_nodeid: nodeid $(peer_nodeid.id)\n");
+
+        // TODO
     }
 
     void identities_arc_removed(IIdmgmtArc arc)
@@ -75,5 +95,7 @@ namespace Netsukuku
         NodeArc node_arc = arc_map[_arc.id];
         neighborhood_mgr.remove_my_arc(node_arc.neighborhood_arc);
         arc_map.unset(_arc.id);
+
+        // TODO
     }
 }

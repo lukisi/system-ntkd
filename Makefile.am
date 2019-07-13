@@ -25,8 +25,11 @@ system_ntkd_SOURCES =  \
 	neighborhood_signals.vala \
 	identities_helpers.vala \
 	identities_signals.vala \
+	qspn_helpers.vala \
+	qspn_signals.vala \
 	neighborhood/neighborhood.vapi \
 	identities/identities.vapi \
+	qspn/qspn.vapi \
 	$(NULL)
 
 system_ntkd_VALAFLAGS = \
