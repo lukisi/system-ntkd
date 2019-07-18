@@ -372,6 +372,13 @@ namespace Netsukuku
 
         first_identity_data = null;
 
+        foreach (string task in tasks)
+        {
+            // if      (schedule_task_add_identity(task)) {}
+            // else if (schedule_task_enter_net(task)) {}
+            // else error(@"unknown task $(task)");
+        }
+
         // register handlers for SIGINT and SIGTERM to exit
         Posix.@signal(Posix.Signal.INT, safe_exit);
         Posix.@signal(Posix.Signal.TERM, safe_exit);

@@ -27,6 +27,10 @@ system_ntkd_SOURCES =  \
 	identities_signals.vala \
 	qspn_helpers.vala \
 	qspn_signals.vala \
+	enter_network.vala \
+	migrate.vala \
+	task_identities.vala \
+	task_qspn.vala \
 	neighborhood/neighborhood.vapi \
 	identities/identities.vapi \
 	qspn/qspn.vapi \
