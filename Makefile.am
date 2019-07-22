@@ -29,8 +29,12 @@ system_ntkd_SOURCES =  \
 	qspn_signals.vala \
 	enter_network.vala \
 	migrate.vala \
-	task_identities.vala \
-	task_qspn.vala \
+	task_enter_network.vala \
+	identity_ip_commands.vala \
+	identity_ip_compute.vala \
+	table_names.vala \
+	ipv4_compute.vala \
+	update_graph.vala \
 	neighborhood/neighborhood.vapi \
 	identities/identities.vapi \
 	qspn/qspn.vapi \

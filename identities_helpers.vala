@@ -31,12 +31,12 @@ namespace Netsukuku
         {
             tester_events.add(@"NetnsManager:create_namespace:netns '$(ns)'");
             assert(ns != "");
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"add", @"$(ns)"}));
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"exec", @"$(ns)",
                 @"sysctl", @"net.ipv4.ip_forward=1"}));
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"exec", @"$(ns)",
                 @"sysctl", @"net.ipv4.conf.all.rp_filter=0"}));
         }
@@ -45,7 +45,7 @@ namespace Netsukuku
         {
             tester_events.add(@"NetnsManager:create_pseudodev:$(pseudo_dev) link $(dev) netns '$(ns)'");
             assert(ns != "");
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"link", @"add", @"dev", @"$(pseudo_dev)", @"link", @"$(dev)", @"type", @"macvlan"}));
             // (optional) set pseudo-random MAC
             string newmac = "4E";
@@ -55,24 +55,24 @@ namespace Netsukuku
                 string sb = b.to_string("%02x").up();
                 newmac += @":$(sb)";
             }
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"link", @"set", @"dev", @"$(pseudo_dev)", @"address", @"$(newmac)"}));
             pseudo_mac = newmac.up(); // it was: pseudo_mac = macgetter.get_mac(pseudo_dev).up();
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"link", @"set", @"dev", @"$(pseudo_dev)", @"netns", @"$(ns)"}));
             // disable rp_filter
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"exec", @"$(ns)",
                 @"sysctl", @"net.ipv4.conf.$(pseudo_dev).rp_filter=0"}));
             // arp policies
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"exec", @"$(ns)",
                 @"sysctl", @"net.ipv4.conf.$(pseudo_dev).arp_ignore=1"}));
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"exec", @"$(ns)",
                 @"sysctl", @"net.ipv4.conf.$(pseudo_dev).arp_announce=2"}));
             // up
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"exec", @"$(ns)",
                 @"ip", @"link", @"set", @"dev", @"$(pseudo_dev)", @"up"}));
         }
@@ -85,7 +85,7 @@ namespace Netsukuku
             if (ns != "") argv.add_all_array({@"ip", @"netns", @"exec", @"$(ns)"});
             argv.add_all_array({
                 @"ip", @"address", @"add", @"$(linklocal)", @"dev", @"$(pseudo_dev)"});
-            cm.single_command(argv);
+            fake_cm.single_command(argv);
         }
 
         public void add_gateway(string ns, string linklocal_src, string linklocal_dst, string dev)
@@ -96,7 +96,7 @@ namespace Netsukuku
             if (ns != "") argv.add_all_array({@"ip", @"netns", @"exec", @"$(ns)"});
             argv.add_all_array({
                 @"ip", @"route", @"add", @"$(linklocal_dst)", @"dev", @"$(dev)", @"src", @"$(linklocal_src)"});
-            cm.single_command(argv);
+            fake_cm.single_command(argv);
         }
 
         public void remove_gateway(string ns, string linklocal_src, string linklocal_dst, string dev)
@@ -107,14 +107,14 @@ namespace Netsukuku
             if (ns != "") argv.add_all_array({@"ip", @"netns", @"exec", @"$(ns)"});
             argv.add_all_array({
                 @"ip", @"route", @"del", @"$(linklocal_dst)", @"dev", @"$(dev)", @"src", @"$(linklocal_src)"});
-            cm.single_command(argv);
+            fake_cm.single_command(argv);
         }
 
         public void flush_table(string ns)
         {
             tester_events.add(@"NetnsManager:flush_table:netns '$(ns)'");
             assert(ns != "");
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"exec", @"$(ns)", @"ip", @"route", @"flush", @"table", @"main"}));
         }
 
@@ -122,7 +122,7 @@ namespace Netsukuku
         {
             tester_events.add(@"NetnsManager:delete_pseudodev:$(pseudo_dev) netns '$(ns)'");
             assert(ns != "");
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"exec", @"$(ns)", @"ip", @"link", @"delete", @"$(pseudo_dev)", @"type", @"macvlan"}));
         }
 
@@ -130,7 +130,7 @@ namespace Netsukuku
         {
             tester_events.add(@"NetnsManager:delete_namespace:netns '$(ns)'");
             assert(ns != "");
-            cm.single_command(new ArrayList<string>.wrap({
+            fake_cm.single_command(new ArrayList<string>.wrap({
                 @"ip", @"netns", @"del", @"$(ns)"}));
         }
     }
