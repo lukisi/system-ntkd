@@ -120,7 +120,7 @@ namespace Netsukuku
         accept_anonymous_requests = false; // default
         no_anonymize = false; // default
         OptionContext oc = new OptionContext("<options>");
-        OptionEntry[] entries = new OptionEntry[7];
+        OptionEntry[] entries = new OptionEntry[9];
         int index = 0;
         entries[index++] = {"topology", '\0', 0, OptionArg.STRING, ref topology, "Topology in bits. Default: 1,1,1,2", null};
         entries[index++] = {"firstaddr", '\0', 0, OptionArg.STRING, ref firstaddr, "First address. E.g. '0,0,1,3'. Default is random.", null};
@@ -375,8 +375,10 @@ namespace Netsukuku
 
         foreach (string task in tasks)
         {
-            if      (schedule_task_prepare_enter(task)) {}
-            else if (schedule_task_enter(task)) {}
+            if      (schedule_task_same_network(task)) {}
+            else if (schedule_task_another_network(task)) {}
+            else if (schedule_task_do_prepare_enter(task)) {}
+            else if (schedule_task_do_finish_enter(task)) {}
             else error(@"unknown task $(task)");
         }
 

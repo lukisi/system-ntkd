@@ -60,21 +60,21 @@ namespace Netsukuku
         print(@"Completed do_finish_enter: New identity is $(new_id.nodeid.id).\n");
     }
 */
-    bool schedule_task_do_prepare_enter(string task)
+    bool schedule_task_same_network(string task)
     {
-        if (task.has_prefix("do_prepare_enter,"))
+        if (task.has_prefix("same_network,"))
         {
-            string remain = task.substring("do_prepare_enter,".length);
+            string remain = task.substring("same_network,".length);
             string[] args = remain.split(",");
-            if (args.length != 3) error("bad args num in task 'do_prepare_enter'");
+            if (args.length != 3) error("bad args num in task 'same_network'");
             int64 ms_wait;
-            if (! int64.try_parse(args[0], out ms_wait)) error("bad args ms_wait in task 'do_prepare_enter'");
+            if (! int64.try_parse(args[0], out ms_wait)) error("bad args ms_wait in task 'same_network'");
             int64 my_id;
-            if (! int64.try_parse(args[1], out my_id)) error("bad args my_id in task 'do_prepare_enter'");
+            if (! int64.try_parse(args[1], out my_id)) error("bad args my_id in task 'same_network'");
             int64 enter_id;
-            if (! int64.try_parse(args[2], out enter_id)) error("bad args enter_id in task 'do_prepare_enter'");
-            print(@"INFO: in $(ms_wait) ms will do do_prepare_enter from parent identity #$(my_id).\n");
-            PrepareEnterTasklet s = new PrepareEnterTasklet(
+            if (! int64.try_parse(args[2], out enter_id)) error("bad args enter_id in task 'same_network'");
+            print(@"INFO: in $(ms_wait) ms will do same_network from parent identity #$(my_id).\n");
+            SameNetworkTasklet s = new SameNetworkTasklet(
                 (int)ms_wait,
                 (int)my_id,
                 (int)enter_id);
@@ -84,9 +84,9 @@ namespace Netsukuku
         else return false;
     }
 
-    class PrepareEnterTasklet : Object, ITaskletSpawnable
+    class SameNetworkTasklet : Object, ITaskletSpawnable
     {
-        public PrepareEnterTasklet(
+        public SameNetworkTasklet(
             int ms_wait,
             int my_id,
             int enter_id)
@@ -108,19 +108,19 @@ namespace Netsukuku
         }
     }
 
-    bool schedule_task_do_finish_enter(string task)
+    bool schedule_task_another_network(string task)
     {
-        if (task.has_prefix("do_finish_enter,"))
+        if (task.has_prefix("another_network,"))
         {
-            string remain = task.substring("do_finish_enter,".length);
+            string remain = task.substring("another_network,".length);
             string[] args = remain.split(",");
-            if (args.length != 2) error("bad args num in task 'do_finish_enter'");
+            if (args.length != 2) error("bad args num in task 'another_network'");
             int64 ms_wait;
-            if (! int64.try_parse(args[0], out ms_wait)) error("bad args ms_wait in task 'do_finish_enter'");
+            if (! int64.try_parse(args[0], out ms_wait)) error("bad args ms_wait in task 'another_network'");
             int64 my_id;
-            if (! int64.try_parse(args[1], out my_id)) error("bad args my_id in task 'do_finish_enter'");
-            print(@"INFO: in $(ms_wait) ms will do do_finish_enter from parent identity #$(my_id).\n");
-            FinishEnterTasklet s = new FinishEnterTasklet(
+            if (! int64.try_parse(args[1], out my_id)) error("bad args my_id in task 'another_network'");
+            print(@"INFO: in $(ms_wait) ms will do another_network from parent identity #$(my_id).\n");
+            AnotherNetworkTasklet s = new AnotherNetworkTasklet(
                 (int)(ms_wait),
                 (int)my_id);
             tasklet.spawn(s);
@@ -129,9 +129,9 @@ namespace Netsukuku
         else return false;
     }
 
-    class FinishEnterTasklet : Object, ITaskletSpawnable
+    class AnotherNetworkTasklet : Object, ITaskletSpawnable
     {
-        public FinishEnterTasklet(
+        public AnotherNetworkTasklet(
             int ms_wait,
             int my_id)
         {

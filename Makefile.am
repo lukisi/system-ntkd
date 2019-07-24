@@ -30,6 +30,7 @@ system_ntkd_SOURCES =  \
 	enter_network.vala \
 	migrate.vala \
 	task_enter_network.vala \
+	task_simulate_hooking.vala \
 	identity_ip_commands.vala \
 	identity_ip_compute.vala \
 	table_names.vala \

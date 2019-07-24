@@ -16,6 +16,7 @@ serializables.c
 enter_network.c
 migrate.c
 task_enter_network.c
+task_simulate_hooking.c
 identity_ip_commands.c
 identity_ip_compute.c
 table_names.c

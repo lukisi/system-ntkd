@@ -12,8 +12,6 @@ echo Starting launches at `date +%T.%N`
               \
               -p 1223 -i wl0 \
               \
-              -t add_identityarc,200,0,0+1 \
-              \
               > test_1_n_i_qspn_1223_out.txt 2>&1 &
 PEER_1223_PID=$!
 sleep 0.3
@@ -21,16 +19,13 @@ sleep 0.3
               \
               -p 2321 -i wl0 \
               \
-              -t add_identity,100,0,1,4,0+0 \
-              -t enter_net,300,0,1,0,2:2,1:0,2232:2232 \
-              \
               > test_1_n_i_qspn_2321_out.txt 2>&1 &
 PEER_2321_PID=$!
 sleep 0.3
 
 echo Done launches at `date +%T.%N`
 
-sleep 2
+sleep 5
 
 echo checking status...
 PEER_ABORT=0
