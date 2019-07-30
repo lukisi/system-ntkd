@@ -12,16 +12,22 @@ echo Starting launches at `date +%T.%N`
               \
               -p 1223 -i wl0 \
               \
+              -t another_network,400,0,wl0,fe:aa:aa:91:27:19,fe:aa:aa:91:27:19,568638306 \
+              \
+              -t do_prepare_enter,1400,0,12345 \
+              -t do_finish_enter,1410,0,12345,568638306,0,523875,1:3:2:1,1:0:0:0 \
+              \
               > test_1_n_i_qspn_1223_out.txt 2>&1 &
 PEER_1223_PID=$!
-sleep 0.3
+sleep 0.03
 ./system_ntkd --topology 2,2,2,2 --firstaddr 2,3,2,1 \
               \
               -p 2321 -i wl0 \
               \
+              -t another_network,400,0,wl0,fe:aa:aa:88:83:64,fe:aa:aa:88:83:64,162389070 \
+              \
               > test_1_n_i_qspn_2321_out.txt 2>&1 &
 PEER_2321_PID=$!
-sleep 0.3
 
 echo Done launches at `date +%T.%N`
 

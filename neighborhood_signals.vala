@@ -25,7 +25,7 @@ namespace Netsukuku
 {
     void neighborhood_nic_address_set(INeighborhoodNetworkInterface nic, string my_addr)
     {
-        print(@"Neighborhood: Signal nic_address_set $(my_addr).\n");
+        print(@"Neighborhood: [$(printabletime())]: Signal nic_address_set $(my_addr).\n");
         string dev = nic.dev;
         PseudoNetworkInterface pseudonic = pseudonic_map[dev];
 
@@ -40,7 +40,7 @@ namespace Netsukuku
 
     void neighborhood_arc_added(INeighborhoodArc neighborhood_arc)
     {
-        print(@"Neighborhood: Signal arc_added.\n");
+        print(@"Neighborhood: [$(printabletime())]: Signal arc_added.\n");
         // Add arc to module Identities and to arc_map
         IdmgmtArc i_arc = new IdmgmtArc(neighborhood_arc);
         arc_map[i_arc.id] = new NodeArc(neighborhood_arc, i_arc);
@@ -49,13 +49,13 @@ namespace Netsukuku
 
     void neighborhood_arc_changed(INeighborhoodArc neighborhood_arc)
     {
-        print(@"Neighborhood: Signal arc_changed.\n");
+        print(@"Neighborhood: [$(printabletime())]: Signal arc_changed.\n");
         // TODO for each identity, for each id-arc, if qspn_arc is present, change cost
     }
 
     void neighborhood_arc_removing(INeighborhoodArc neighborhood_arc, bool is_still_usable)
     {
-        print(@"Neighborhood: Signal arc_removing.\n");
+        print(@"Neighborhood: [$(printabletime())]: Signal arc_removing.\n");
         // Remove arc from module Identities
         foreach (int id in arc_map.keys)
         {
@@ -70,7 +70,7 @@ namespace Netsukuku
 
     void neighborhood_arc_removed(INeighborhoodArc neighborhood_arc)
     {
-        print(@"Neighborhood: Signal arc_removed.\n");
+        print(@"Neighborhood: [$(printabletime())]: Signal arc_removed.\n");
         // Remove arc from arc_map
         foreach (int id in arc_map.keys)
         {
@@ -86,7 +86,7 @@ namespace Netsukuku
 
     void neighborhood_nic_address_unset(INeighborhoodNetworkInterface nic, string my_addr)
     {
-        print(@"Neighborhood: Signal nic_address_unset $(my_addr).\n");
+        print(@"Neighborhood: [$(printabletime())]: Signal nic_address_unset $(my_addr).\n");
         // TODO ?
     }
 }

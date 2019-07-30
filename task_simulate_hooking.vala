@@ -125,7 +125,7 @@ namespace Netsukuku
         {
             string remain = task.substring("another_network,".length);
             string[] args = remain.split(",");
-            if (args.length != 2) error("bad args num in task 'another_network'");
+            if (args.length != 6) error("bad args num in task 'another_network'");
             int64 ms_wait;
             if (! int64.try_parse(args[0], out ms_wait)) error("bad args ms_wait in task 'another_network'");
             int64 local_identity_index;
@@ -134,7 +134,7 @@ namespace Netsukuku
             string arc_peer_mac = args[3];
             string id_arc_peer_mac = args[4];
             int64 network_id;
-            if (! int64.try_parse(args[1], out network_id)) error("bad args network_id in task 'another_network'");
+            if (! int64.try_parse(args[5], out network_id)) error("bad args network_id in task 'another_network'");
             print(@"INFO: in $(ms_wait) ms will do another_network from parent identity #$(local_identity_index).\n");
             AnotherNetworkTasklet s = new AnotherNetworkTasklet(
                 (int)ms_wait,

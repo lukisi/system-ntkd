@@ -28,7 +28,7 @@ namespace Netsukuku
     void identities_identity_arc_added(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc, IIdmgmtIdentityArc? prev_id_arc)
     {
         tester_events.add(@"Identities:Signal:identity_arc_added");
-        print(@"Identities: Signal identity_arc_added:\n");
+        print(@"Identities: [$(printabletime())]: Signal identity_arc_added:\n");
         print(@"    arc: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
         print(@"    my identity: nodeid $(id.id)\n");
         print(@"    id_arc: nodeid $(id_arc.get_peer_nodeid().id) peer_mac $(id_arc.get_peer_mac()) peer_linklocal $(id_arc.get_peer_linklocal())\n");
@@ -50,7 +50,7 @@ namespace Netsukuku
     void identities_identity_arc_changed(IIdmgmtArc arc, NodeID id, IIdmgmtIdentityArc id_arc, bool only_neighbour_migrated)
     {
         tester_events.add(@"Identities:Signal:identity_arc_changed");
-        print(@"Identities: Signal identity_arc_changed:\n");
+        print(@"Identities: [$(printabletime())]: Signal identity_arc_changed:\n");
         print(@"    arc: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
         print(@"    my identity: nodeid $(id.id)\n");
         print(@"    id_arc: nodeid $(id_arc.get_peer_nodeid().id) peer_mac $(id_arc.get_peer_mac()) peer_linklocal $(id_arc.get_peer_linklocal())\n");
@@ -73,7 +73,7 @@ namespace Netsukuku
     void identities_identity_arc_removing(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
     {
         tester_events.add(@"Identities:Signal:identity_arc_removing");
-        print(@"Identities: Signal identity_arc_removing:\n");
+        print(@"Identities: [$(printabletime())]: Signal identity_arc_removing:\n");
         print(@"    arc: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
         print(@"    my identity: nodeid $(id.id)\n");
         print(@"    peer_nodeid: nodeid $(peer_nodeid.id)\n");
@@ -84,7 +84,7 @@ namespace Netsukuku
     void identities_identity_arc_removed(IIdmgmtArc arc, NodeID id, NodeID peer_nodeid)
     {
         tester_events.add(@"Identities:Signal:identity_arc_removed");
-        print(@"Identities: Signal identity_arc_removed:\n");
+        print(@"Identities: [$(printabletime())]: Signal identity_arc_removed:\n");
         print(@"    arc: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
         print(@"    my identity: nodeid $(id.id)\n");
         print(@"    peer_nodeid: nodeid $(peer_nodeid.id)\n");
@@ -96,7 +96,7 @@ namespace Netsukuku
     {
         tester_events.add(@"Identities:Signal:arc_removed");
         // The module Identities has removed an arc. Remove the arc from Neighborhood.
-        print(@"Identities: Signal arc_removed: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
+        print(@"Identities: [$(printabletime())]: Signal arc_removed: dev $(arc.get_dev()) peer_mac $(arc.get_peer_mac()) peer_linklocal $(arc.get_peer_linklocal())\n");
         IdmgmtArc _arc = (IdmgmtArc)arc;
         NodeArc node_arc = arc_map[_arc.id];
         neighborhood_mgr.remove_my_arc(node_arc.neighborhood_arc);
