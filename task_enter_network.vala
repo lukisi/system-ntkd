@@ -24,24 +24,6 @@ using TaskletSystem;
 namespace Netsukuku
 {
 /*
-    void per_identity_hooking_same_network(IdentityData id, IIdentityArc _ia)
-    {
-        IdentityArc ia = ((HookingIdentityArc)_ia).ia;
-        ia.network_id = null;
-        print(@"Signal Hooking.same_network: adding qspn_arc for id-arc " +
-            @"$(id.nodeid.id)-$(ia.id_arc.get_peer_nodeid().id) on arc $(((IdmgmtArc)ia.arc).id).\n");
-        UpdateGraph.add_arc(ia); // this will set ia.qspn_arc
-    }
-
-    void per_identity_hooking_another_network(IdentityData id, IIdentityArc _ia, int64 network_id)
-    {
-        IdentityArc ia = ((HookingIdentityArc)_ia).ia;
-        ia.network_id = network_id;
-        print(@"Signal Hooking.another_network: saving network_id $(network_id) for id-arc " +
-            @"$(id.nodeid.id)-$(ia.id_arc.get_peer_nodeid().id) on arc $(((IdmgmtArc)ia.arc).id).\n");
-    }
-
-
     void per_identity_hooking_do_prepare_enter(IdentityData id, int enter_id)
     {
         print(@"Signal Hooking.do_prepare_enter: For identity $(id.nodeid.id) with enter_id $(enter_id).\n");
@@ -69,14 +51,14 @@ namespace Netsukuku
             if (args.length != 3) error("bad args num in task 'do_prepare_enter'");
             int64 ms_wait;
             if (! int64.try_parse(args[0], out ms_wait)) error("bad args ms_wait in task 'do_prepare_enter'");
-            int64 my_id;
-            if (! int64.try_parse(args[1], out my_id)) error("bad args my_id in task 'do_prepare_enter'");
+            int64 local_identity_index;
+            if (! int64.try_parse(args[1], out local_identity_index)) error("bad args local_identity_index in task 'do_prepare_enter'");
             int64 enter_id;
             if (! int64.try_parse(args[2], out enter_id)) error("bad args enter_id in task 'do_prepare_enter'");
-            print(@"INFO: in $(ms_wait) ms will do do_prepare_enter from parent identity #$(my_id).\n");
+            print(@"INFO: in $(ms_wait) ms will do do_prepare_enter from parent identity #$(local_identity_index).\n");
             PrepareEnterTasklet s = new PrepareEnterTasklet(
                 (int)ms_wait,
-                (int)my_id,
+                (int)local_identity_index,
                 (int)enter_id);
             tasklet.spawn(s);
             return true;
@@ -88,22 +70,28 @@ namespace Netsukuku
     {
         public PrepareEnterTasklet(
             int ms_wait,
-            int my_id,
+            int local_identity_index,
             int enter_id)
         {
             this.ms_wait = ms_wait;
-            this.my_id = my_id;
+            this.local_identity_index = local_identity_index;
             this.enter_id = enter_id;
         }
         private int ms_wait;
-        private int my_id;
+        private int local_identity_index;
         private int enter_id;
 
         public void * func()
         {
             tasklet.ms_wait(ms_wait);
 
-            // TODO
+            // find IdentityData
+            IdentityData? identity_data = find_local_identity_by_index(local_identity_index);
+            assert(identity_data != null);
+
+            print(@"PseudoSignal Hooking.do_prepare_enter: For identity #$(local_identity_index) with enter_id $(enter_id).\n");
+            EnterNetwork.prepare_enter(enter_id, identity_data);
+
             return null;
         }
     }
@@ -114,15 +102,53 @@ namespace Netsukuku
         {
             string remain = task.substring("do_finish_enter,".length);
             string[] args = remain.split(",");
-            if (args.length != 2) error("bad args num in task 'do_finish_enter'");
+            if (args.length != 8) error("bad args num in task 'do_finish_enter'");
             int64 ms_wait;
             if (! int64.try_parse(args[0], out ms_wait)) error("bad args ms_wait in task 'do_finish_enter'");
-            int64 my_id;
-            if (! int64.try_parse(args[1], out my_id)) error("bad args my_id in task 'do_finish_enter'");
-            print(@"INFO: in $(ms_wait) ms will do do_finish_enter from parent identity #$(my_id).\n");
+            int64 local_identity_index;
+            if (! int64.try_parse(args[1], out local_identity_index)) error("bad args local_identity_index in task 'do_finish_enter'");
+            int64 enter_id;
+            if (! int64.try_parse(args[2], out enter_id)) error("bad args enter_id in task 'do_finish_enter'");
+            int64 network_id;
+            if (! int64.try_parse(args[3], out network_id)) error("bad args network_id in task 'do_finish_enter'");
+            int64 guest_gnode_level;
+            if (! int64.try_parse(args[4], out guest_gnode_level)) error("bad args guest_gnode_level in task 'do_finish_enter'");
+            int64 go_connectivity_position;
+            if (! int64.try_parse(args[5], out go_connectivity_position)) error("bad args go_connectivity_position in task 'do_finish_enter'");
+            ArrayList<int> in_g_naddr = new ArrayList<int>();
+            int host_level;
+            {
+                string[] parts = args[6].split(":");
+                host_level = levels - (parts.length - 1);
+                if (host_level <= guest_gnode_level) error("bad parts num in in_g_naddr in task 'do_finish_enter'");
+                for (int i = 0; i < parts.length; i++)
+                {
+                    int64 element;
+                    if (! int64.try_parse(parts[i], out element)) error("bad parts element in in_g_naddr in task 'do_finish_enter'");
+                    in_g_naddr.add((int)element);
+                }
+            }
+            ArrayList<int> in_g_elderships = new ArrayList<int>();
+            {
+                string[] parts = args[7].split(":");
+                if (host_level != levels - (parts.length - 1)) error("bad parts num in in_g_elderships in task 'do_finish_enter'");
+                for (int i = 0; i < parts.length; i++)
+                {
+                    int64 element;
+                    if (! int64.try_parse(parts[i], out element)) error("bad parts element in in_g_elderships in task 'do_finish_enter'");
+                    in_g_elderships.add((int)element);
+                }
+            }
+            print(@"INFO: in $(ms_wait) ms will do do_finish_enter from parent identity #$(local_identity_index).\n");
             FinishEnterTasklet s = new FinishEnterTasklet(
-                (int)(ms_wait),
-                (int)my_id);
+                (int)ms_wait,
+                (int)local_identity_index,
+                (int)enter_id,
+                network_id,
+                (int)guest_gnode_level,
+                (int)go_connectivity_position,
+                in_g_naddr,
+                in_g_elderships);
             tasklet.spawn(s);
             return true;
         }
@@ -133,19 +159,48 @@ namespace Netsukuku
     {
         public FinishEnterTasklet(
             int ms_wait,
-            int my_id)
+            int local_identity_index,
+            int enter_id,
+            int64 network_id,
+            int guest_gnode_level,
+            int go_connectivity_position,
+            ArrayList<int> in_g_naddr,
+            ArrayList<int> in_g_elderships)
         {
             this.ms_wait = ms_wait;
-            this.my_id = my_id;
+            this.local_identity_index = local_identity_index;
+            this.enter_id = enter_id;
+            this.network_id = network_id;
+            this.guest_gnode_level = guest_gnode_level;
+            this.go_connectivity_position = go_connectivity_position;
+            this.in_g_naddr = in_g_naddr;
+            this.in_g_elderships = in_g_elderships;
         }
         private int ms_wait;
-        private int my_id;
+        private int local_identity_index;
+        private int enter_id;
+        private int64 network_id;
+        private int guest_gnode_level;
+        private int go_connectivity_position;
+        private ArrayList<int> in_g_naddr;
+        private ArrayList<int> in_g_elderships;
 
         public void * func()
         {
             tasklet.ms_wait(ms_wait);
 
-            // TODO
+            // find IdentityData
+            IdentityData? identity_data = find_local_identity_by_index(local_identity_index);
+            assert(identity_data != null);
+
+            print(@"PseudoSignal Hooking.do_finish_enter: For identity #$(local_identity_index) with enter_id $(enter_id).\n");
+            print(@"     With guest_gnode_level $(guest_gnode_level) on network_id $(network_id).\n");
+            IdentityData new_id = EnterNetwork.enter(enter_id, identity_data, network_id,
+                guest_gnode_level, go_connectivity_position,
+                in_g_naddr,
+                in_g_elderships);
+            print(@"Completed do_finish_enter: New identity is $(new_id.nodeid.id).\n");
+
             return null;
         }
     }

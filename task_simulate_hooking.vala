@@ -40,25 +40,6 @@ namespace Netsukuku
         print(@"Signal Hooking.another_network: saving network_id $(network_id) for id-arc " +
             @"$(id.nodeid.id)-$(ia.id_arc.get_peer_nodeid().id) on arc $(((IdmgmtArc)ia.arc).id).\n");
     }
-
-
-    void per_identity_hooking_do_prepare_enter(IdentityData id, int enter_id)
-    {
-        print(@"Signal Hooking.do_prepare_enter: For identity $(id.nodeid.id) with enter_id $(enter_id).\n");
-        EnterNetwork.prepare_enter(enter_id, id);
-    }
-
-    void per_identity_hooking_do_finish_enter(IdentityData id,
-        int enter_id, int guest_gnode_level, EntryData entry_data, int go_connectivity_position)
-    {
-        print(@"Signal Hooking.do_finish_enter: For identity $(id.nodeid.id) with enter_id $(enter_id).\n");
-        print(@"     With guest_gnode_level $(guest_gnode_level) on network_id $(entry_data.network_id).\n");
-        IdentityData new_id = EnterNetwork.enter(enter_id, id, entry_data.network_id,
-            guest_gnode_level, go_connectivity_position,
-            entry_data.pos,
-            entry_data.elderships);
-        print(@"Completed do_finish_enter: New identity is $(new_id.nodeid.id).\n");
-    }
 */
     bool schedule_task_same_network(string task)
     {
@@ -66,18 +47,21 @@ namespace Netsukuku
         {
             string remain = task.substring("same_network,".length);
             string[] args = remain.split(",");
-            if (args.length != 3) error("bad args num in task 'same_network'");
+            if (args.length != 5) error("bad args num in task 'same_network'");
             int64 ms_wait;
             if (! int64.try_parse(args[0], out ms_wait)) error("bad args ms_wait in task 'same_network'");
-            int64 my_id;
-            if (! int64.try_parse(args[1], out my_id)) error("bad args my_id in task 'same_network'");
-            int64 enter_id;
-            if (! int64.try_parse(args[2], out enter_id)) error("bad args enter_id in task 'same_network'");
-            print(@"INFO: in $(ms_wait) ms will do same_network from parent identity #$(my_id).\n");
+            int64 local_identity_index;
+            if (! int64.try_parse(args[1], out local_identity_index)) error("bad args local_identity_index in task 'same_network'");
+            string arc_my_dev = args[2];
+            string arc_peer_mac = args[3];
+            string id_arc_peer_mac = args[4];
+            print(@"INFO: in $(ms_wait) ms will do same_network from parent identity #$(local_identity_index).\n");
             SameNetworkTasklet s = new SameNetworkTasklet(
                 (int)ms_wait,
-                (int)my_id,
-                (int)enter_id);
+                (int)local_identity_index,
+                arc_my_dev,
+                arc_peer_mac,
+                id_arc_peer_mac);
             tasklet.spawn(s);
             return true;
         }
@@ -88,22 +72,49 @@ namespace Netsukuku
     {
         public SameNetworkTasklet(
             int ms_wait,
-            int my_id,
-            int enter_id)
+            int local_identity_index,
+            string arc_my_dev,
+            string arc_peer_mac,
+            string id_arc_peer_mac)
         {
             this.ms_wait = ms_wait;
-            this.my_id = my_id;
-            this.enter_id = enter_id;
+            this.local_identity_index = local_identity_index;
+            this.arc_my_dev = arc_my_dev;
+            this.arc_peer_mac = arc_peer_mac;
+            this.id_arc_peer_mac = id_arc_peer_mac;
         }
         private int ms_wait;
-        private int my_id;
-        private int enter_id;
+        private int local_identity_index;
+        private string arc_my_dev;
+        private string arc_peer_mac;
+        private string id_arc_peer_mac;
 
         public void * func()
         {
             tasklet.ms_wait(ms_wait);
 
+            // find IdentityData and IdentityArc
+            IdentityData? identity_data = find_local_identity_by_index(local_identity_index);
+            assert(identity_data != null);
+            IdentityArc? ia = null;
+            foreach (IdentityArc _ia in identity_data.identity_arcs)
+            {
+                if (_ia.arc.get_dev() == arc_my_dev &&
+                    _ia.arc.get_peer_mac() == arc_peer_mac &&
+                    _ia.id_arc.get_peer_mac() == id_arc_peer_mac)
+                {
+                    ia = _ia;
+                    break;
+                }
+            }
+            assert(ia != null);
+
             // TODO
+            ia.network_id = null;
+            print(@"PseudoSignal Hooking.same_network: adding qspn_arc for id-arc " +
+                @"$(identity_data.nodeid.id)-$(ia.id_arc.get_peer_nodeid().id) on arc $(((IdmgmtArc)ia.arc).id).\n");
+            UpdateGraph.add_arc(ia); // this will set ia.qspn_arc
+
             return null;
         }
     }
@@ -117,12 +128,21 @@ namespace Netsukuku
             if (args.length != 2) error("bad args num in task 'another_network'");
             int64 ms_wait;
             if (! int64.try_parse(args[0], out ms_wait)) error("bad args ms_wait in task 'another_network'");
-            int64 my_id;
-            if (! int64.try_parse(args[1], out my_id)) error("bad args my_id in task 'another_network'");
-            print(@"INFO: in $(ms_wait) ms will do another_network from parent identity #$(my_id).\n");
+            int64 local_identity_index;
+            if (! int64.try_parse(args[1], out local_identity_index)) error("bad args local_identity_index in task 'another_network'");
+            string arc_my_dev = args[2];
+            string arc_peer_mac = args[3];
+            string id_arc_peer_mac = args[4];
+            int64 network_id;
+            if (! int64.try_parse(args[1], out network_id)) error("bad args network_id in task 'another_network'");
+            print(@"INFO: in $(ms_wait) ms will do another_network from parent identity #$(local_identity_index).\n");
             AnotherNetworkTasklet s = new AnotherNetworkTasklet(
-                (int)(ms_wait),
-                (int)my_id);
+                (int)ms_wait,
+                (int)local_identity_index,
+                arc_my_dev,
+                arc_peer_mac,
+                id_arc_peer_mac,
+                network_id);
             tasklet.spawn(s);
             return true;
         }
@@ -133,19 +153,51 @@ namespace Netsukuku
     {
         public AnotherNetworkTasklet(
             int ms_wait,
-            int my_id)
+            int local_identity_index,
+            string arc_my_dev,
+            string arc_peer_mac,
+            string id_arc_peer_mac,
+            int64 network_id)
         {
             this.ms_wait = ms_wait;
-            this.my_id = my_id;
+            this.local_identity_index = local_identity_index;
+            this.arc_my_dev = arc_my_dev;
+            this.arc_peer_mac = arc_peer_mac;
+            this.id_arc_peer_mac = id_arc_peer_mac;
+            this.network_id = network_id;
         }
         private int ms_wait;
-        private int my_id;
+        private int local_identity_index;
+        private string arc_my_dev;
+        private string arc_peer_mac;
+        private string id_arc_peer_mac;
+        private int64 network_id;
 
         public void * func()
         {
             tasklet.ms_wait(ms_wait);
 
+            // find IdentityData and IdentityArc
+            IdentityData? identity_data = find_local_identity_by_index(local_identity_index);
+            assert(identity_data != null);
+            IdentityArc? ia = null;
+            foreach (IdentityArc _ia in identity_data.identity_arcs)
+            {
+                if (_ia.arc.get_dev() == arc_my_dev &&
+                    _ia.arc.get_peer_mac() == arc_peer_mac &&
+                    _ia.id_arc.get_peer_mac() == id_arc_peer_mac)
+                {
+                    ia = _ia;
+                    break;
+                }
+            }
+            assert(ia != null);
+
             // TODO
+            ia.network_id = network_id;
+            print(@"PseudoSignal Hooking.another_network: saving network_id $(network_id) for id-arc " +
+                @"$(identity_data.nodeid.id)-$(ia.id_arc.get_peer_nodeid().id) on arc $(((IdmgmtArc)ia.arc).id).\n");
+
             return null;
         }
     }

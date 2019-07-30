@@ -61,6 +61,12 @@ namespace Netsukuku
         // Retrieve IdentityArc.
         IdentityArc ia = identity_data.identity_arcs_find(arc, id_arc);
 
+        // Modify properties.
+        ia.prev_peer_mac = ia.peer_mac;
+        ia.prev_peer_linklocal = ia.peer_linklocal;
+        ia.peer_mac = ia.id_arc.get_peer_mac();
+        ia.peer_linklocal = ia.id_arc.get_peer_linklocal();
+
         // TODO
     }
 
