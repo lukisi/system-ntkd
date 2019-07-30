@@ -342,6 +342,11 @@ namespace Netsukuku
         print(@"INFO: $(first_identity_name) has address $(json_string_object(first_identity_data.my_naddr))");
         print(@" and fp $(json_string_object(first_identity_data.my_fp)).\n");
 
+        // iproute commands for startup first identity
+        IpCompute.new_main_id(first_identity_data);
+        IpCompute.new_id(first_identity_data);
+        IpCommands.main_start(first_identity_data);
+
         // First qspn manager
         first_identity_data.qspn_mgr = new QspnManager.create_net(
             first_identity_data.my_naddr,
@@ -392,7 +397,7 @@ namespace Netsukuku
             if (do_me_exit) break;
         }
 
-        // Remove connectivity identities.
+        // Remove connectivity identities and their network namespaces and linklocal addresses.
         ArrayList<IdentityData> local_identities_copy = new ArrayList<IdentityData>();
         local_identities_copy.add_all(local_identities.values);
         foreach (IdentityData identity_data in local_identities_copy)
@@ -416,7 +421,18 @@ namespace Netsukuku
                 identity_data.qspn_mgr.remove_identity.disconnect(identity_data.remove_identity);
                 identity_data.qspn_mgr.stop_operations();
 
+                // remove namespace
+                identity_mgr.remove_identity(identity_data.nodeid);
+
+                // remove from local_identities
                 remove_local_identity(identity_data.nodeid);
+
+                // when needed, remove ntk_from_xxx from rt_tables
+                ArrayList<string> peermacs = new ArrayList<string>();
+                foreach (IdentityArc id_arc in identity_data.identity_arcs)
+                    if (id_arc.qspn_arc != null)
+                    peermacs.add(id_arc.peer_mac);
+                IpCommands.connectivity_stop(identity_data, peermacs);
             }
         }
         local_identities_copy = null;
@@ -442,6 +458,20 @@ namespace Netsukuku
         last_identity_data.qspn_mgr.qspn_bootstrap_complete.disconnect(last_identity_data.qspn_bootstrap_complete);
         last_identity_data.qspn_mgr.remove_identity.disconnect(last_identity_data.remove_identity);
         last_identity_data.qspn_mgr.stop_operations();
+
+        // iproute commands for cleanup main identity
+        ArrayList<string> peermacs = new ArrayList<string>();
+        print("removing main_id\n");
+        foreach (IdentityArc id_arc in last_identity_data.identity_arcs)
+        {
+            print(@"id_arc to $(id_arc.peer_mac)\n");
+            if (id_arc.qspn_arc != null)
+            {
+                print("    has qspn\n");
+                peermacs.add(id_arc.peer_mac);
+            }
+        }
+        IpCommands.main_stop(last_identity_data, peermacs);
 
         remove_local_identity(last_identity_data.nodeid);
         last_identity_data = null;
