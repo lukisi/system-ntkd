@@ -157,7 +157,7 @@ namespace Netsukuku
                     // check listen_pathname
                     if (arc_my_pseudonic.st_listen_pathname != listen_pathname) continue;
                     // check neighbour_mac
-                    if (neighborhood_arc.neighbour_nic_addr != neighbour_mac) continue;
+                    if (neighborhood_arc.neighbour_mac != neighbour_mac) continue;
                     // check peer_node_id
                     if (neighborhood_arc.neighbour_id.equals(peer_node_id)) return node_arc;
                 }
