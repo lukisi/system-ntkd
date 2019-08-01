@@ -375,6 +375,7 @@ namespace Netsukuku
             first_identity_data.my_naddr,
             first_identity_data.my_fp,
             new QspnStubFactory(first_identity_data.local_identity_index));
+        identity_mgr.set_identity_module(first_identity_data.nodeid, "qspn", first_identity_data.qspn_mgr);
         string addr = ""; string addrnext = "";
         for (int i = 0; i < levels; i++)
         {
