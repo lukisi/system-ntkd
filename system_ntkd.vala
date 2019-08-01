@@ -107,6 +107,29 @@ namespace Netsukuku
         local_identities.unset(nodeid.id);
     }
 
+    IdentityArc? find_identity_arc(IIdmgmtIdentityArc id_arc)
+    {
+        foreach (IdentityData id in local_identities.values) foreach (IdentityArc ia in id.identity_arcs)
+        {
+            if (ia.id_arc == id_arc)
+            {
+                return ia;
+            }
+        }
+        return null;
+    }
+
+    IdentityArc? find_identity_arc_by_peer_nodeid(IdentityData identity_data, IIdmgmtArc arc, NodeID peer_nodeid)
+    {
+        foreach (IdentityArc ia in identity_data.identity_arcs)
+        {
+            if (ia.arc == arc)
+             if (ia.id_arc.get_peer_nodeid().equals(peer_nodeid))
+                return ia;
+        }
+        return null;
+    }
+
     const int max_paths = 5;
     const double max_common_hops_ratio = 0.6;
     const int arc_timeout = 10000;

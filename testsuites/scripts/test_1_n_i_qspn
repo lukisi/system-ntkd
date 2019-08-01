@@ -8,7 +8,7 @@ sleep 0.3
 
 echo Starting launches at `date +%T.%N`
 
-./system_ntkd --topology 2,2,2,2 --firstaddr 1,2,2,3 --serve-anonymous \
+./system_ntkd --topology 2,2,2,2 --firstaddr 1,2,2,3 --no-anonymize \
               \
               -p 1223 -i wl0 \
               \
@@ -20,7 +20,7 @@ echo Starting launches at `date +%T.%N`
               > test_1_n_i_qspn_1223_out.txt 2>&1 &
 PEER_1223_PID=$!
 sleep 0.03
-./system_ntkd --topology 2,2,2,2 --firstaddr 2,3,2,1 --serve-anonymous \
+./system_ntkd --topology 2,2,2,2 --firstaddr 2,3,2,1 --no-anonymize \
               \
               -p 2321 -i wl0 \
               \
