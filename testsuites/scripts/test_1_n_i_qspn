@@ -26,12 +26,20 @@ sleep 0.03
               \
               -t another_network,400,0,wl0,fe:aa:aa:88:83:64,fe:aa:aa:88:83:64,162389070 \
               \
+              -t same_network,4000,0,wl0,fe:aa:aa:88:83:64,fe:aa:aa:88:83:64 \
+              \
               > test_1_n_i_qspn_2321_out.txt 2>&1 &
 PEER_2321_PID=$!
 
 echo Done launches at `date +%T.%N`
 
-sleep 10
+# Circa 3 secondi dopo il task do_finish_enter (t=4400) il nodo 1223 chiama get_full_etp sul nodo 2321.
+# Poco prima (t=2400) il nodo 2321 ha rilevato il nuovo arco-identità.
+# Il codice in enter_network rimuove la vecchia identità dopo 10 secondi che è pronta la nuova.
+# Quindi facciamo il task same_network verso il tempo 4000
+# e terminiamo la script in 20 secondi.
+
+sleep 20
 
 echo checking status...
 PEER_ABORT=0
@@ -39,10 +47,14 @@ kill -0 $PEER_1223_PID || { wait $PEER_1223_PID; echo system_peer 1223 premature
 kill -0 $PEER_2321_PID || { wait $PEER_2321_PID; echo system_peer 2321 prematurely exited with $?; PEER_ABORT=1; }
 
 echo killing...
-# interrupt peers
-kill $PEER_1223_PID $PEER_2321_PID
 
-wait $PEER_1223_PID $PEER_2321_PID
+# interrupt peers one at a time
+
+kill $PEER_1223_PID
+wait $PEER_1223_PID
+
+kill $PEER_2321_PID
+wait $PEER_2321_PID
 
 # Ignore errors in this shutdown. Remove any remaining local socket.
 rm -f conn_169.254.*
