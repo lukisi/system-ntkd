@@ -509,6 +509,11 @@ namespace Netsukuku
         neighborhood_mgr = null;
         tasklet.ms_wait(100);
 
+        // print all commands from fake_cm
+        print("\n=== all commands ===\n");
+        foreach (string c in fake_cm.list_all_commands) print(@"$(c)\n");
+        print("=== END all commands ===\n");
+
         PthTaskletImplementer.kill();
 
         return 0;
