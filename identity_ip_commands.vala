@@ -343,6 +343,14 @@ namespace Netsukuku.IpCommands
         fake_cm.single_command(cmd);
     }
 
+    void cat_cmd_in_block(int bid, Gee.List<string> prefix_cmd, string[] cmd_array)
+    {
+        ArrayList<string> cmd = new ArrayList<string>();
+        cmd.add_all(prefix_cmd);
+        cmd.add_all_array(cmd_array);
+        fake_cm.single_command_in_block(bid, cmd);
+    }
+
     void gone_connectivity(IdentityData id, Gee.List<string> peermacs)
     {
         DestinationIPSet dest_ip_set = id.dest_ip_set;
@@ -481,31 +489,34 @@ namespace Netsukuku.IpCommands
         prefix_cmd.add_all_array({
             @"ip", @"netns", @"exec", @"$(id.network_namespace)"});
 
+        // commands in block
+        int bid = fake_cm.begin_block();
         string m = new_peermac;
         {
             string table;
             int tid;
-            tn.get_table(null, m, out tid, out table);
-            cat_cmd(prefix_cmd, {
+            tn.get_table(bid, m, out tid, out table);
+            cat_cmd_in_block(bid, prefix_cmd, {
                 @"iptables", @"-t", @"mangle", @"-A", @"PREROUTING", @"-m", @"mac",
                 @"--mac-source", @"$(m)", @"-j", @"MARK", @"--set-mark", @"$(tid)"});
-            cat_cmd(prefix_cmd, {
+            cat_cmd_in_block(bid, prefix_cmd, {
                 @"ip", @"rule", @"add", @"fwmark", @"$(tid)", @"table", @"$(table)"});
             tn.incref_table(m);
             foreach (HCoord hc in dest_ip_set.sorted_gnode_keys)
             {
                 DestinationIPSetGnode dest = dest_ip_set.gnode[hc];
-                cat_cmd(prefix_cmd, {
+                cat_cmd_in_block(bid, prefix_cmd, {
                     @"ip", @"route", @"add", @"unreachable", @"$(dest.global)", @"table", @"$(table)"});
-                cat_cmd(prefix_cmd, {
+                cat_cmd_in_block(bid, prefix_cmd, {
                     @"ip", @"route", @"add", @"unreachable", @"$(dest.anonymizing)", @"table", @"$(table)"});
                 for (int k = levels-1; k >= hc.lvl+1; k--)
                 {
-                    cat_cmd(prefix_cmd, {
+                    cat_cmd_in_block(bid, prefix_cmd, {
                         @"ip", @"route", @"add", @"unreachable", @"$(dest.intern[k])", @"table", @"$(table)"});
                 }
             }
         }
+        fake_cm.end_block(bid);
 
         foreach (HCoord hc in dest_ip_set.sorted_gnode_keys) per_identity_qspn_map_update_hc(id, hc);
     }
