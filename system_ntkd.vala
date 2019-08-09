@@ -420,6 +420,7 @@ namespace Netsukuku
             tasklet.ms_wait(100);
             if (do_me_exit) break;
         }
+        print(@"[$(printabletime())]: Shutting down.\n");
 
         // Remove connectivity identities and their network namespaces and linklocal addresses.
         ArrayList<IdentityData> local_identities_copy = new ArrayList<IdentityData>();
@@ -483,15 +484,17 @@ namespace Netsukuku
         last_identity_data.qspn_mgr.remove_identity.disconnect(last_identity_data.remove_identity);
         last_identity_data.qspn_mgr.stop_operations();
 
+        // Call stop_rpc.
+        ArrayList<string> final_devs = new ArrayList<string>();
+        final_devs.add_all(pseudonic_map.keys);
+        foreach (string dev in final_devs) stop_rpc(dev);
+
         // iproute commands for cleanup main identity
         ArrayList<string> peermacs = new ArrayList<string>();
-        print("removing main_id\n");
         foreach (IdentityArc id_arc in last_identity_data.identity_arcs)
         {
-            print(@"id_arc to $(id_arc.peer_mac)\n");
             if (id_arc.qspn_arc != null)
             {
-                print("    has qspn\n");
                 peermacs.add(id_arc.peer_mac);
             }
         }
@@ -499,11 +502,6 @@ namespace Netsukuku
 
         remove_local_identity(last_identity_data.nodeid);
         last_identity_data = null;
-
-        // Call stop_rpc.
-        ArrayList<string> final_devs = new ArrayList<string>();
-        final_devs.add_all(pseudonic_map.keys);
-        foreach (string dev in final_devs) stop_rpc(dev);
 
         // Then we destroy the object NeighborhoodManager.
         neighborhood_mgr = null;
