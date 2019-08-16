@@ -1,0 +1,124 @@
+#!/bin/bash
+
+radio_domain -i 1223_wl0 -o 2321_wl0 -o 1000_wl0 &
+RADIO_1223_PID=$!
+radio_domain -i 2321_wl0 -o 1223_wl0 &
+RADIO_2321_PID=$!
+radio_domain -i 1000_wl0 -o 1223_wl0 &
+RADIO_1000_PID=$!
+sleep 0.3
+
+echo Starting launches at `date +%T.%N`
+
+./system_ntkd --topology 2,2,2,2 --firstaddr 1,2,2,3 --no-anonymize \
+              \
+              -p 1223 -i wl0 \
+              \
+              -t another_network,400,0,wl0,fe:aa:aa:91:27:19,fe:aa:aa:91:27:19,568638306 \
+              -t another_network,410,0,wl0,fe:aa:aa:91:51:84,fe:aa:aa:91:51:84,1943046791 \
+              \
+              -t do_prepare_enter,1400,0,12345 \
+              -t do_finish_enter,1410,0,12345,568638306,0,523875,1:3:2:1,1:0:0:0 \
+              \
+              -t another_network,4010,1,wl0,fe:aa:aa:91:51:84,fe:aa:aa:91:51:84,1943046791 \
+              \
+              -t same_network,7000,1,wl0,fe:aa:aa:91:51:84,fe:aa:aa:91:51:84 \
+              \
+              > test_2_n_i_qspn_1223_out.txt 2>&1 &
+PEER_1223_PID=$!
+# Node 1223: id_0=1165049684, id_1=1379308926, fp0=162389070, wl0mac=fe:aa:aa:88:83:64.
+sleep 0.03
+./system_ntkd --topology 2,2,2,2 --firstaddr 2,3,2,1 --no-anonymize \
+              \
+              -p 2321 -i wl0 \
+              \
+              -t another_network,400,0,wl0,fe:aa:aa:88:83:64,fe:aa:aa:88:83:64,162389070 \
+              \
+              -t same_network,4000,0,wl0,fe:aa:aa:88:83:64,fe:aa:aa:88:83:64 \
+              \
+              > test_2_n_i_qspn_2321_out.txt 2>&1 &
+PEER_2321_PID=$!
+# Node 2321: id_0=999087204, fp0=568638306, wl0mac=fe:aa:aa:91:27:19.
+sleep 0.03
+./system_ntkd --topology 2,2,2,2 --firstaddr 1,0,0,0 --no-anonymize \
+              \
+              -p 1000 -i wl0 \
+              \
+              -t another_network,400,0,wl0,fe:aa:aa:88:83:64,fe:aa:aa:88:83:64,162389070 \
+              \
+              -t another_network,4010,0,wl0,fe:aa:aa:88:83:64,fe:aa:aa:88:83:64,568638306 \
+              \
+              -t do_prepare_enter,4400,0,34251 \
+              -t do_finish_enter,4410,0,34251,568638306,0,24572,0:2:1,1:0:0 \
+              \
+              > test_2_n_i_qspn_1000_out.txt 2>&1 &
+PEER_1000_PID=$!
+# Node 1000: id_0=1128856235, fp0=1943046791, wl0mac=fe:aa:aa:91:51:84.
+
+echo Done launches at `date +%T.%N`
+
+# Dal momento che il radio_domain è attivato e abilita la comunicazione tra due pseudo-interfacce di rete di due system_ntkd,
+# il modulo Neighborhood crea un arco. Al segnale neighborhood:arc_added il system_ntkd chiama add_arc di Identites. Il modulo
+# Identities crea l'arco-identità principale. Al segnale identities:identity_arc_added il system_ntkd dovrà (in futuro)
+# chiamare add_arc di Hooking, che per ora non c'è. Al posto del modulo Hooking, la script attiverà il task `same_network` oppure il task
+# `another_network`. Questo avviene in tutti i nodi che congiungono due reti distinte.
+# In questi due task (come nei relativi segnali emessi dal modulo Hooking) è necessario fornire un identificativo del IdentityArc.
+
+# Successivamente, in tutti i nodi membri della rete che dovrà entrare (come primo test si presume che nella rete ospite
+# non ci sia bisogno di nessuna migrazione) la script, sempre al posto del modulo Hooking, attiverà il task
+# `do_prepare_enter` e `do_finish_enter`.
+
+# Nel nostro esempio: al tempo t=400 avviamo i task `another_network` nei vari nodi come simulazione
+# del compito del modulo Hooking; al tempo t=1400 avviamo i task `do_prepare_enter` e `do_finish_enter`
+# nel nodo 1223 (come simulazione del modulo Hooking che segnala che il nodo 1223 vuole entrare nella
+# rete di 2321).
+
+# Circa 3 secondi dopo il task do_finish_enter (t=4400) il nodo 1223 chiama get_full_etp sul nodo 2321.
+# Poco prima (t=2400) il nodo 2321 ha rilevato il nuovo arco-identità. Quindi facciamo
+# il task `same_network` sul nodo 2321 verso il tempo 4000.
+
+# Il codice in enter_network rimuove la vecchia identità dopo 10 secondi che è pronta la nuova.
+# Quindi terminiamo la script in 20 secondi per dar modo di assistere a questo evento.
+
+# Dopo che ha completato il bootstrap, la seconda identità del nodo 1223 passa i suoi (2) archi-identità al modulo
+# Hooking: nel nostro caso lo simuliamo e (t=4010) attiviamo il task `another_network`.
+
+# Al tempo 4400 circa il nodo 1000 decide di entrare come *421 e al tempo 7000 il nodo 1223 (che ormai ha indirizzo 1321)
+# lo riconosce come membro della same_network.
+
+sleep 20
+
+echo checking status...
+PEER_ABORT=0
+kill -0 $PEER_1223_PID || { wait $PEER_1223_PID; echo system_peer 1223 prematurely exited with $?; PEER_ABORT=1; }
+kill -0 $PEER_2321_PID || { wait $PEER_2321_PID; echo system_peer 2321 prematurely exited with $?; PEER_ABORT=1; }
+kill -0 $PEER_1000_PID || { wait $PEER_1000_PID; echo system_peer 1000 prematurely exited with $?; PEER_ABORT=1; }
+
+echo killing...
+
+# interrupt peers one at a time
+
+kill $PEER_1223_PID
+wait $PEER_1223_PID
+
+kill $PEER_2321_PID
+wait $PEER_2321_PID
+
+kill $PEER_1000_PID
+wait $PEER_1000_PID
+
+# Ignore errors in this shutdown. Remove any remaining local socket.
+rm -f conn_169.254.*
+rm -f conn_????_?
+rm -f recv_????_wl0
+
+# kill proxy demons
+kill $RADIO_1223_PID $RADIO_2321_PID $RADIO_1000_PID
+
+wait $RADIO_1223_PID $RADIO_2321_PID $RADIO_1000_PID
+
+# delay for removal of local sockets (e.g. send_2232_wl0)
+sleep 0.3
+
+# check PEER_ABORT
+test $PEER_ABORT -eq 0 || exit 1
