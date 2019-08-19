@@ -64,7 +64,7 @@ echo Done launches at `date +%T.%N`
 # `another_network`. Questo avviene in tutti i nodi che congiungono due reti distinte.
 # In questi due task (come nei relativi segnali emessi dal modulo Hooking) è necessario fornire un identificativo del IdentityArc.
 
-# Successivamente, in tutti i nodi membri della rete che dovrà entrare (come primo test si presume che nella rete ospite
+# Successivamente, in tutti i nodi membri della rete guest (come primo test si presume che nella rete host
 # non ci sia bisogno di nessuna migrazione) la script, sempre al posto del modulo Hooking, attiverà il task
 # `do_prepare_enter` e `do_finish_enter`.
 

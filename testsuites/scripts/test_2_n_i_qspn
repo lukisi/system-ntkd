@@ -1,11 +1,41 @@
 #!/bin/bash
 
+# (cd neighborhood && git diff)
+# diff --git a/neighborhood.vala b/neighborhood.vala
+# index ce06286..a31673d 100644
+# --- a/neighborhood.vala
+# +++ b/neighborhood.vala
+# @@ -179,7 +179,7 @@ namespace Netsukuku.Neighborhood
+#                          warning("Neighborhood.monitor_run: " +
+#                          @"DeserializeError '$(e.message)' while sending in broadcast to $(nic.mac).");
+#                      }
+# -                    tasklet.ms_wait(60000);
+# +                    tasklet.ms_wait(2000);
+#                  }
+#              }
+#          }
+# @@ -282,7 +282,7 @@ namespace Netsukuku.Neighborhood
+#                      }
+#
+#                      // wait a random from 28 to 30 secs
+# -                    tasklet.ms_wait(Random.int_range(28000, 30000));
+# +                    tasklet.ms_wait(Random.int_range(2800, 3000));
+#                  }
+#              }
+#          }
+
 radio_domain -i 1223_wl0 -o 2321_wl0 -o 1000_wl0 &
 RADIO_1223_PID=$!
 radio_domain -i 2321_wl0 -o 1223_wl0 &
 RADIO_2321_PID=$!
 radio_domain -i 1000_wl0 -o 1223_wl0 &
 RADIO_1000_PID=$!
+#####
+radio_domain -i 3020_wl0 -o 1210_wl0 &
+RADIO_3020_PID=$!
+radio_domain -i 1210_wl0 -o 3020_wl0 &
+RADIO_1210_PID=$!
+
 sleep 0.3
 
 echo Starting launches at `date +%T.%N`
@@ -54,6 +84,33 @@ sleep 0.03
               > test_2_n_i_qspn_1000_out.txt 2>&1 &
 PEER_1000_PID=$!
 # Node 1000: id_0=1128856235, fp0=1943046791, wl0mac=fe:aa:aa:91:51:84.
+sleep 0.03
+
+./system_ntkd --topology 2,2,2,2 --firstaddr 1,2,1,0 --no-anonymize \
+              \
+              -p 1210 -i wl0 \
+              \
+              -t another_network,400,0,wl0,fe:aa:aa:65:34:51,fe:aa:aa:65:34:51,568638306 \
+              \
+              -t do_prepare_enter,1400,0,12345 \
+              -t do_finish_enter,1410,0,12345,568638306,0,523875,1:3:2:1,1:0:0:0 \
+              \
+              > test_2_n_i_qspn_1210_out.txt 2>&1 &
+PEER_1210_PID=$!
+# Node 1210: id_0=77606204, id_1=619450581, fp0=1074717319, wl0mac=fe:aa:aa:82:64:28.
+sleep 0.03
+./system_ntkd --topology 2,2,2,2 --firstaddr 3,0,2,0 --no-anonymize \
+              \
+              -p 3020 -i wl0 \
+              \
+              -t another_network,400,0,wl0,fe:aa:aa:82:64:28,fe:aa:aa:82:64:28,1074717319 \
+              \
+              -t same_network,4000,0,wl0,fe:aa:aa:82:64:28,fe:aa:aa:82:64:28 \
+              \
+              > test_2_n_i_qspn_3020_out.txt 2>&1 &
+PEER_3020_PID=$!
+# Node 3020: id_0=1820878047, fp0=333039316, wl0mac=fe:aa:aa:65:34:51.
+sleep 0.03
 
 echo Done launches at `date +%T.%N`
 
@@ -64,7 +121,7 @@ echo Done launches at `date +%T.%N`
 # `another_network`. Questo avviene in tutti i nodi che congiungono due reti distinte.
 # In questi due task (come nei relativi segnali emessi dal modulo Hooking) è necessario fornire un identificativo del IdentityArc.
 
-# Successivamente, in tutti i nodi membri della rete che dovrà entrare (come primo test si presume che nella rete ospite
+# Successivamente, in tutti i nodi membri della rete guest (come primo test si presume che nella rete host
 # non ci sia bisogno di nessuna migrazione) la script, sempre al posto del modulo Hooking, attiverà il task
 # `do_prepare_enter` e `do_finish_enter`.
 
@@ -86,13 +143,38 @@ echo Done launches at `date +%T.%N`
 # Al tempo 4400 circa il nodo 1000 decide di entrare come *421 e al tempo 7000 il nodo 1223 (che ormai ha indirizzo 1321)
 # lo riconosce come membro della same_network.
 
-sleep 20
+sleep 10
+
+kill $RADIO_2321_PID
+wait $RADIO_2321_PID
+radio_domain -i 2321_wl0 -o 1223_wl0 -o 3020_wl0 &
+RADIO_2321_PID=$!
+
+kill $RADIO_1000_PID
+wait $RADIO_1000_PID
+radio_domain -i 1000_wl0 -o 1223_wl0 -o 1210_wl0 &
+RADIO_1000_PID=$!
+
+kill $RADIO_3020_PID
+wait $RADIO_3020_PID
+radio_domain -i 3020_wl0 -o 1210_wl0 -o 2321_wl0 &
+RADIO_3020_PID=$!
+
+kill $RADIO_1210_PID
+wait $RADIO_1210_PID
+radio_domain -i 1210_wl0 -o 3020_wl0 -o 1000_wl0 &
+RADIO_1210_PID=$!
+
+sleep 10
 
 echo checking status...
 PEER_ABORT=0
 kill -0 $PEER_1223_PID || { wait $PEER_1223_PID; echo system_peer 1223 prematurely exited with $?; PEER_ABORT=1; }
 kill -0 $PEER_2321_PID || { wait $PEER_2321_PID; echo system_peer 2321 prematurely exited with $?; PEER_ABORT=1; }
 kill -0 $PEER_1000_PID || { wait $PEER_1000_PID; echo system_peer 1000 prematurely exited with $?; PEER_ABORT=1; }
+
+kill -0 $PEER_3020_PID || { wait $PEER_3020_PID; echo system_peer 3020 prematurely exited with $?; PEER_ABORT=1; }
+kill -0 $PEER_1210_PID || { wait $PEER_1210_PID; echo system_peer 1210 prematurely exited with $?; PEER_ABORT=1; }
 
 echo killing...
 
@@ -107,15 +189,21 @@ wait $PEER_2321_PID
 kill $PEER_1000_PID
 wait $PEER_1000_PID
 
+kill $PEER_3020_PID
+wait $PEER_3020_PID
+
+kill $PEER_1210_PID
+wait $PEER_1210_PID
+
 # Ignore errors in this shutdown. Remove any remaining local socket.
 rm -f conn_169.254.*
 rm -f conn_????_?
 rm -f recv_????_wl0
 
 # kill proxy demons
-kill $RADIO_1223_PID $RADIO_2321_PID $RADIO_1000_PID
+kill $RADIO_1223_PID $RADIO_2321_PID $RADIO_1000_PID $RADIO_3020_PID $RADIO_1210_PID
 
-wait $RADIO_1223_PID $RADIO_2321_PID $RADIO_1000_PID
+wait $RADIO_1223_PID $RADIO_2321_PID $RADIO_1000_PID $RADIO_3020_PID $RADIO_1210_PID
 
 # delay for removal of local sockets (e.g. send_2232_wl0)
 sleep 0.3
