@@ -66,6 +66,8 @@ sleep 0.03
               \
               -t same_network,4000,0,wl0,fe:aa:aa:88:83:64,fe:aa:aa:88:83:64 \
               \
+              -t another_network,11000,0,wl0,fe:aa:aa:65:34:51,fe:aa:aa:65:34:51,333039316 \
+              \
               > test_2_n_i_qspn_2321_out.txt 2>&1 &
 PEER_2321_PID=$!
 # Node 2321: id_0=999087204, fp0=568638306, wl0mac=fe:aa:aa:91:27:19.
@@ -81,6 +83,8 @@ sleep 0.03
               -t do_prepare_enter,4400,0,34251 \
               -t do_finish_enter,4410,0,34251,568638306,0,24572,0:2:1,1:0:0 \
               \
+              -t another_network,11000,1,wl0,fe:aa:aa:82:64:28,fe:aa:aa:82:64:28,333039316 \
+              \
               > test_2_n_i_qspn_1000_out.txt 2>&1 &
 PEER_1000_PID=$!
 # Node 1000: id_0=1128856235, fp0=1943046791, wl0mac=fe:aa:aa:91:51:84.
@@ -90,10 +94,15 @@ sleep 0.03
               \
               -p 1210 -i wl0 \
               \
-              -t another_network,400,0,wl0,fe:aa:aa:65:34:51,fe:aa:aa:65:34:51,568638306 \
+              -t another_network,400,0,wl0,fe:aa:aa:65:34:51,fe:aa:aa:65:34:51,333039316 \
               \
               -t do_prepare_enter,1400,0,12345 \
-              -t do_finish_enter,1410,0,12345,568638306,0,523875,1:3:2:1,1:0:0:0 \
+              -t do_finish_enter,1410,0,12345,333039316,0,523875,0:0:2:0,1:0:0:0 \
+              \
+              -t another_network,11000,1,wl0,fe:aa:aa:91:51:84,fe:aa:aa:91:51:84,568638306 \
+              \
+              -t do_prepare_enter,12000,1,67548 \
+              -t do_finish_enter,13000,1,67548,568638306,1,346312,1:2:1,2:0:0 \
               \
               > test_2_n_i_qspn_1210_out.txt 2>&1 &
 PEER_1210_PID=$!
@@ -106,6 +115,11 @@ sleep 0.03
               -t another_network,400,0,wl0,fe:aa:aa:82:64:28,fe:aa:aa:82:64:28,1074717319 \
               \
               -t same_network,4000,0,wl0,fe:aa:aa:82:64:28,fe:aa:aa:82:64:28 \
+              \
+              -t another_network,11000,0,wl0,fe:aa:aa:91:27:19,fe:aa:aa:91:27:19,568638306 \
+              \
+              -t do_prepare_enter,12000,0,67548 \
+              -t do_finish_enter,13000,0,67548,568638306,1,346312,1:2:1,2:0:0 \
               \
               > test_2_n_i_qspn_3020_out.txt 2>&1 &
 PEER_3020_PID=$!
@@ -142,6 +156,12 @@ echo Done launches at `date +%T.%N`
 
 # Al tempo 4400 circa il nodo 1000 decide di entrare come *421 e al tempo 7000 il nodo 1223 (che ormai ha indirizzo 1321)
 # lo riconosce come membro della same_network.
+
+# Soltanto dopo 10 secondi si rilevano i link 2321-3020 e 1000-1210.
+
+# Al tempo t=11000 avviamo i task `another_network` nei nodi 2321, 1000, 1210, 3020.
+# Al tempo t=12000 avviamo i task `do_prepare_enter` e (13000) `do_finish_enter` nei nodi 1210, 3020.
+# Al tempo t=15000 facciamo il task `same_network` sui nodi 2321, 1000.
 
 sleep 10
 
