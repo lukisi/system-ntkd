@@ -68,6 +68,8 @@ sleep 0.03
               \
               -t another_network,11000,0,wl0,fe:aa:aa:65:34:51,fe:aa:aa:65:34:51,333039316 \
               \
+              -t same_network,15000,0,wl0,fe:aa:aa:65:34:51,fe:aa:aa:65:34:51 \
+              \
               > test_2_n_i_qspn_2321_out.txt 2>&1 &
 PEER_2321_PID=$!
 # Node 2321: id_0=999087204, fp0=568638306, wl0mac=fe:aa:aa:91:27:19.
@@ -84,6 +86,8 @@ sleep 0.03
               -t do_finish_enter,4410,0,34251,568638306,0,24572,0:2:1,1:0:0 \
               \
               -t another_network,11000,1,wl0,fe:aa:aa:82:64:28,fe:aa:aa:82:64:28,333039316 \
+              \
+              -t same_network,15000,1,wl0,fe:aa:aa:82:64:28,fe:aa:aa:82:64:28 \
               \
               > test_2_n_i_qspn_1000_out.txt 2>&1 &
 PEER_1000_PID=$!
