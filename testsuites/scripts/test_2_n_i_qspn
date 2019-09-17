@@ -189,7 +189,7 @@ wait $RADIO_1210_PID
 radio_domain -i 1210_wl0 -o 3020_wl0 -o 1000_wl0 &
 RADIO_1210_PID=$!
 
-sleep 10
+sleep 15
 
 echo checking status...
 PEER_ABORT=0
