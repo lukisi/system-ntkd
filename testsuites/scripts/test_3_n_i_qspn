@@ -1,0 +1,136 @@
+#!/bin/bash
+
+# (cd neighborhood && git diff)
+# diff --git a/neighborhood.vala b/neighborhood.vala
+# index ce06286..a31673d 100644
+# --- a/neighborhood.vala
+# +++ b/neighborhood.vala
+# @@ -179,7 +179,7 @@ namespace Netsukuku.Neighborhood
+#                          warning("Neighborhood.monitor_run: " +
+#                          @"DeserializeError '$(e.message)' while sending in broadcast to $(nic.mac).");
+#                      }
+# -                    tasklet.ms_wait(60000);
+# +                    tasklet.ms_wait(2000);
+#                  }
+#              }
+#          }
+# @@ -282,7 +282,7 @@ namespace Netsukuku.Neighborhood
+#                      }
+#
+#                      // wait a random from 28 to 30 secs
+# -                    tasklet.ms_wait(Random.int_range(28000, 30000));
+# +                    tasklet.ms_wait(Random.int_range(2800, 3000));
+#                  }
+#              }
+#          }
+
+#eth_domain   -i 123_eth0  -i 456_eth0  -i 789_eth0 &
+eth_domain -i 1223_eth0 -i 2321_eth1 &
+ETH_1223_2321_PID=$!
+
+sleep 0.3
+
+echo Starting launches at `date +%T.%N`
+
+./system_ntkd --topology 2,2,2,2 --firstaddr 1,2,2,3 --no-anonymize \
+              \
+              -p 1223 -i eth0 -i eth1 \
+              \
+              > test_3_n_i_qspn_1223_out.txt 2>&1 &
+PEER_1223_PID=$!
+# Node 1223: id_0=1165049684, id_1=1379308926, fp0=162389070, wl0mac=fe:aa:aa:88:83:64.
+sleep 0.03
+./system_ntkd --topology 2,2,2,2 --firstaddr 2,3,2,1 --no-anonymize \
+              \
+              -p 2321 -i eth0 -i eth1 \
+              \
+              > test_3_n_i_qspn_2321_out.txt 2>&1 &
+PEER_2321_PID=$!
+# Node 2321: id_0=999087204, fp0=568638306, wl0mac=fe:aa:aa:91:27:19.
+sleep 0.03
+./system_ntkd --topology 2,2,2,2 --firstaddr 1,0,0,0 --no-anonymize \
+              \
+              -p 1000 -i eth0 -i eth1 \
+              \
+              > test_3_n_i_qspn_1000_out.txt 2>&1 &
+PEER_1000_PID=$!
+# Node 1000: id_0=1128856235, fp0=1943046791, wl0mac=fe:aa:aa:91:51:84.
+sleep 0.03
+./system_ntkd --topology 2,2,2,2 --firstaddr 1,2,1,0 --no-anonymize \
+              \
+              -p 1210 -i eth0 -i eth1 \
+              \
+              > test_3_n_i_qspn_1210_out.txt 2>&1 &
+PEER_1210_PID=$!
+# Node 1210: id_0=77606204, id_1=619450581, fp0=1074717319, wl0mac=fe:aa:aa:82:64:28.
+sleep 0.03
+./system_ntkd --topology 2,2,2,2 --firstaddr 3,0,2,0 --no-anonymize \
+              \
+              -p 3020 -i eth0 -i eth1 \
+              \
+              > test_3_n_i_qspn_3020_out.txt 2>&1 &
+PEER_3020_PID=$!
+# Node 3020: id_0=1820878047, fp0=333039316, wl0mac=fe:aa:aa:65:34:51.
+sleep 0.03
+
+echo Done launches at `date +%T.%N`
+
+# Dal momento che il eth_domain è attivato e abilita la comunicazione tra due pseudo-interfacce di rete di due system_ntkd,
+# il modulo Neighborhood crea un arco. Al segnale neighborhood:arc_added il system_ntkd chiama add_arc di Identites. Il modulo
+# Identities crea l'arco-identità principale. Al segnale identities:identity_arc_added il system_ntkd dovrà (in futuro)
+# chiamare add_arc di Hooking, che per ora non c'è. Al posto del modulo Hooking, la script attiverà il task `same_network` oppure il task
+# `another_network`. Questo avviene in tutti i nodi che congiungono due reti distinte.
+# In questi due task (come nei relativi segnali emessi dal modulo Hooking) è necessario fornire un identificativo del IdentityArc.
+
+# Successivamente, in tutti i nodi membri della rete guest (come primo test si presume che nella rete host
+# non ci sia bisogno di nessuna migrazione) la script, sempre al posto del modulo Hooking, attiverà il task
+# `do_prepare_enter` e `do_finish_enter`.
+
+
+
+sleep 10
+
+
+echo checking status...
+PEER_ABORT=0
+kill -0 $PEER_1223_PID || { wait $PEER_1223_PID; echo system_peer 1223 prematurely exited with $?; PEER_ABORT=1; }
+kill -0 $PEER_2321_PID || { wait $PEER_2321_PID; echo system_peer 2321 prematurely exited with $?; PEER_ABORT=1; }
+kill -0 $PEER_1000_PID || { wait $PEER_1000_PID; echo system_peer 1000 prematurely exited with $?; PEER_ABORT=1; }
+
+kill -0 $PEER_3020_PID || { wait $PEER_3020_PID; echo system_peer 3020 prematurely exited with $?; PEER_ABORT=1; }
+kill -0 $PEER_1210_PID || { wait $PEER_1210_PID; echo system_peer 1210 prematurely exited with $?; PEER_ABORT=1; }
+
+echo killing...
+
+# interrupt peers one at a time
+
+kill $PEER_1223_PID
+wait $PEER_1223_PID
+
+kill $PEER_2321_PID
+wait $PEER_2321_PID
+
+kill $PEER_1000_PID
+wait $PEER_1000_PID
+
+kill $PEER_3020_PID
+wait $PEER_3020_PID
+
+kill $PEER_1210_PID
+wait $PEER_1210_PID
+
+# Ignore errors in this shutdown. Remove any remaining local socket.
+rm -f conn_169.254.*
+rm -f conn_????_?
+rm -f recv_????_wl0
+
+# kill proxy demons
+kill $ETH_1223_2321_PID
+
+wait $ETH_1223_2321_PID
+
+# delay for removal of local sockets (e.g. send_2232_wl0)
+sleep 0.3
+
+# check PEER_ABORT
+test $PEER_ABORT -eq 0 || exit 1

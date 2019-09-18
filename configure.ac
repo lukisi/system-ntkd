@@ -42,5 +42,6 @@ AC_CONFIG_LINKS([test_1_neighborhood:testsuites/scripts/test_1_neighborhood])
 AC_CONFIG_LINKS([test_1_n_identities:testsuites/scripts/test_1_n_identities])
 AC_CONFIG_LINKS([test_1_n_i_qspn:testsuites/scripts/test_1_n_i_qspn])
 AC_CONFIG_LINKS([test_2_n_i_qspn:testsuites/scripts/test_2_n_i_qspn])
+AC_CONFIG_LINKS([test_3_n_i_qspn:testsuites/scripts/test_3_n_i_qspn])
 AC_OUTPUT
 
