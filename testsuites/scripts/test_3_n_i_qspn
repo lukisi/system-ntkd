@@ -62,9 +62,13 @@ echo Starting launches at `date +%T.%N`
               -t do_prepare_enter,4000,0,12345 \
               -t do_finish_enter,4010,0,12345,1310359493,0,523875,1:3:2:1,1:0:0:0 \
               \
+              -t another_network,18000,1,eth1,fe:aa:aa:91:51:84,fe:aa:aa:91:51:84,1377009613 \
+              \
+              -t same_network,22000,1,eth1,fe:aa:aa:91:51:84,fe:aa:aa:91:51:84 \
+              \
               > test_3_n_i_qspn_1223_out.txt 2>&1 &
 PEER_1223_PID=$!
-# Node 1223: id_0=1165049684, fp0=570869880, eth0mac=fe:aa:aa:88:83:64, eth1mac=fe:aa:aa:84:13:82.
+# Node 1223: id_0=1165049684, id_1=1379308926, fp0=570869880, eth0mac=fe:aa:aa:88:83:64, eth1mac=fe:aa:aa:84:13:82.
 sleep 0.03
 ./system_ntkd --topology 2,2,2,2 --firstaddr 2,3,2,1 --no-anonymize \
               \
@@ -81,6 +85,11 @@ sleep 0.03
 ./system_ntkd --topology 2,2,2,2 --firstaddr 1,0,0,0 --no-anonymize \
               \
               -p 1000 -i eth0 -i eth1 \
+              \
+              -t another_network,18000,0,eth0,fe:aa:aa:84:13:82,fe:aa:aa:84:13:82,1310359493 \
+              \
+              -t do_prepare_enter,19000,0,34251 \
+              -t do_finish_enter,19010,0,34251,1310359493,0,24572,0:2:1,1:0:0 \
               \
               > test_3_n_i_qspn_1000_out.txt 2>&1 &
 PEER_1000_PID=$!
@@ -131,12 +140,32 @@ ETH_1223_2321_PID=$!
 #       prev_id_arc: null
 #    [will be] Passing it to the module Hooking.
 
-sleep 10
+sleep 15
 
 kill $TEMP_1000_ETH0_PID $TEMP_1223_ETH1_PID
 wait $TEMP_1000_ETH0_PID $TEMP_1223_ETH1_PID
 eth_domain -i 1000_eth0 -i 1223_eth1 &
 ETH_1000_1223_PID=$!
+
+# node 1223: identities:identity_arc_added id# 1, dev eth1, peer_nic fe:aa:aa:91:51:84, peer_pseudonic fe:aa:aa:91:51:84
+#
+#   Neighborhood: [307.917362]: Signal arc_added.
+#   Identities: [307.920429]: Signal identity_arc_added:
+#       arc: dev eth1 peer_mac fe:aa:aa:91:51:84 peer_linklocal 169.254.208.196
+#       my identity: nodeid 1379308926
+#       id_arc: nodeid 1128856235 peer_mac fe:aa:aa:91:51:84 peer_linklocal 169.254.208.196
+#       prev_id_arc: null
+#    [will be] Passing it to the module Hooking.
+
+# node 1000: identities:identity_arc_added id# 0, dev eth0, peer_nic fe:aa:aa:84:13:82, peer_pseudonic fe:aa:aa:84:13:82
+#
+#   Neighborhood: [307.917531]: Signal arc_added.
+#   Identities: [307.920475]: Signal identity_arc_added:
+#       arc: dev eth0 peer_mac fe:aa:aa:84:13:82 peer_linklocal 169.254.91.64
+#       my identity: nodeid 1128856235
+#       id_arc: nodeid 1379308926 peer_mac fe:aa:aa:84:13:82 peer_linklocal 169.254.91.64
+#       prev_id_arc: null
+#    [will be] Passing it to the module Hooking.
 
 
 
@@ -156,7 +185,7 @@ ETH_1000_1223_PID=$!
 
 
 
-sleep 10
+sleep 15
 
 
 echo checking status...
