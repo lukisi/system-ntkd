@@ -99,6 +99,11 @@ sleep 0.03
               \
               -p 1210 -i eth0 -i eth1 \
               \
+              -t another_network,3000,0,eth1,fe:aa:aa:65:34:51,fe:aa:aa:65:34:51,551752794 \
+              \
+              -t do_prepare_enter,4000,0,52835 \
+              -t do_finish_enter,4010,0,52835,551752794,0,134872,0:0:2:0,1:0:0:0 \
+              \
               > test_3_n_i_qspn_1210_out.txt 2>&1 &
 PEER_1210_PID=$!
 # Node 1210: id_0=77606204, fp0=523161057, eth0mac=fe:aa:aa:82:64:28, eth1mac=fe:aa:aa:81:54:87.
@@ -106,6 +111,10 @@ sleep 0.03
 ./system_ntkd --topology 2,2,2,2 --firstaddr 3,0,2,0 --no-anonymize \
               \
               -p 3020 -i eth0 -i eth1 \
+              \
+              -t another_network,3000,0,eth0,fe:aa:aa:81:54:87,fe:aa:aa:81:54:87,523161057 \
+              \
+              -t same_network,7000,0,eth0,fe:aa:aa:81:54:87,fe:aa:aa:81:54:87 \
               \
               > test_3_n_i_qspn_3020_out.txt 2>&1 &
 PEER_3020_PID=$!
@@ -120,6 +129,11 @@ kill $TEMP_1223_ETH0_PID $TEMP_2321_ETH1_PID
 wait $TEMP_1223_ETH0_PID $TEMP_2321_ETH1_PID
 eth_domain -i 1223_eth0 -i 2321_eth1 &
 ETH_1223_2321_PID=$!
+
+kill $TEMP_3020_ETH0_PID $TEMP_1210_ETH1_PID
+wait $TEMP_3020_ETH0_PID $TEMP_1210_ETH1_PID
+eth_domain -i 3020_eth0 -i 1210_eth1 &
+ETH_3020_1210_PID=$!
 
 # node 2321: identities:identity_arc_added id# 0, dev eth1, peer_nic fe:aa:aa:88:83:64, peer_pseudonic fe:aa:aa:88:83:64
 #
@@ -137,6 +151,24 @@ ETH_1223_2321_PID=$!
 #       arc: dev eth0 peer_mac fe:aa:aa:52:50:27 peer_linklocal 169.254.122.80
 #       my identity: nodeid 1165049684
 #       id_arc: nodeid 999087204 peer_mac fe:aa:aa:52:50:27 peer_linklocal 169.254.122.80
+#       prev_id_arc: null
+#    [will be] Passing it to the module Hooking.
+
+# node 3020:identities:identity_arc_added id# 0, dev eth0, peer_nic fe:aa:aa:81:54:87, peer_pseudonic fe:aa:aa:81:54:87
+#   Neighborhood: [718.755998]: Signal arc_added.
+#   Identities: [718.759297]: Signal identity_arc_added:
+#       arc: dev eth0 peer_mac fe:aa:aa:81:54:87 peer_linklocal 169.254.13.216
+#       my identity: nodeid 1820878047
+#       id_arc: nodeid 77606204 peer_mac fe:aa:aa:81:54:87 peer_linklocal 169.254.13.216
+#       prev_id_arc: null
+#    [will be] Passing it to the module Hooking.
+
+# node 1210:identities:identity_arc_added id# 0, dev eth1, peer_nic fe:aa:aa:65:34:51, peer_pseudonic fe:aa:aa:65:34:51
+#   Neighborhood: [718.755713]: Signal arc_added.
+#   Identities: [718.759014]: Signal identity_arc_added:
+#       arc: dev eth1 peer_mac fe:aa:aa:65:34:51 peer_linklocal 169.254.225.135
+#       my identity: nodeid 77606204
+#       id_arc: nodeid 1820878047 peer_mac fe:aa:aa:65:34:51 peer_linklocal 169.254.225.135
 #       prev_id_arc: null
 #    [will be] Passing it to the module Hooking.
 
@@ -224,14 +256,14 @@ rm -f recv_????_eth?
 # kill proxy demons
 
 kill $TEMP_2321_ETH0_PID \
-     $TEMP_1000_ETH1_PID $TEMP_1210_ETH0_PID $TEMP_1210_ETH1_PID $TEMP_3020_ETH0_PID $TEMP_3020_ETH1_PID
+     $TEMP_1000_ETH1_PID $TEMP_1210_ETH0_PID $TEMP_3020_ETH1_PID
 
 wait $TEMP_2321_ETH0_PID \
-     $TEMP_1000_ETH1_PID $TEMP_1210_ETH0_PID $TEMP_1210_ETH1_PID $TEMP_3020_ETH0_PID $TEMP_3020_ETH1_PID
+     $TEMP_1000_ETH1_PID $TEMP_1210_ETH0_PID $TEMP_3020_ETH1_PID
 
-kill $ETH_1223_2321_PID $ETH_1000_1223_PID
+kill $ETH_1223_2321_PID $ETH_3020_1210_PID $ETH_1000_1223_PID
 
-wait $ETH_1223_2321_PID $ETH_1000_1223_PID
+wait $ETH_1223_2321_PID $ETH_3020_1210_PID $ETH_1000_1223_PID
 
 # delay for removal of local sockets (e.g. send_2232_wl0)
 sleep 0.3
